@@ -4,9 +4,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alura.concord.data.Author
+import com.alura.concord.data.DownloadStatus
+import com.alura.concord.data.DownloadableContent
 import com.alura.concord.data.Message
 import com.alura.concord.data.messageListSample
 import com.alura.concord.database.ChatDao
+import com.alura.concord.database.DownloadableContentDao
 import com.alura.concord.database.MessageDao
 import com.alura.concord.navigation.messageChatIdArgument
 import com.alura.concord.util.getFormattedCurrentDate
@@ -24,6 +27,7 @@ class MessageListViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val messageDao: MessageDao,
     private val chatDao: ChatDao,
+    private val downloadableContentDao: DownloadableContentDao
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MessageListUiState())
     val uiState: StateFlow<MessageListUiState>
@@ -33,7 +37,6 @@ class MessageListViewModel @Inject constructor(
         requireNotNull(savedStateHandle.get<String>(messageChatIdArgument)?.toLong())
 
     init {
-//        initWithSamples()
         loadDatas()
 
         _uiState.update { state ->
@@ -75,12 +78,37 @@ class MessageListViewModel @Inject constructor(
     private fun loadMessages() {
         viewModelScope.launch {
             messageDao.getByChatId(chatId).collect { messages ->
-                messages.let {
-                    _uiState.value = _uiState.value.copy(
-                        messages = it
-                    )
+                messages.forEach { searchedMessage ->
+                    if (searchedMessage.author == Author.OTHER) {
+<<<<<<< HEAD
+                        loadMessageWithDownloadableContent(searchedMessage)
+=======
+                        loadMessageWithDownloadableContent(
+                            searchedMessage
+                        )?.let { messageWithDownloadableContent ->
+                            _uiState.value = _uiState.value.copy(
+                                messages = _uiState.value.messages + messageWithDownloadableContent
+                            )
+                        }
+>>>>>>> f51b0a5 (refact: to code review)
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            messages = _uiState.value.messages + searchedMessage
+                        )
+                    }
                 }
             }
+        }
+    }
+
+    private suspend fun loadMessageWithDownloadableContent(searchedMessage: Message) {
+        searchedMessage.idDownloadableContent?.let { contentId ->
+            _uiState.value = _uiState.value.copy(
+                messages = _uiState.value.messages + searchedMessage.copy(
+                    downloadableContent = downloadableContentDao.getById(contentId)
+                        .first()
+                )
+            )
         }
     }
 
@@ -162,4 +190,120 @@ class MessageListViewModel @Inject constructor(
         )
     }
 
+
+    fun setShowBottomSheetShare(value: Boolean) {
+        _uiState.value = _uiState.value.copy(
+            showBottomSheetShare = value,
+        )
+    }
+
+
+    fun setShowFileOptions(message: Message? = null, show: Boolean) {
+        _uiState.value = _uiState.value.copy(
+            showBottomSheetShare = show,
+            selectedMessage = message ?: Message()
+        )
+    }
+
+<<<<<<< HEAD
+    fun simulatedDownload(currentMessage: Message) {
+        viewModelScope.launch {
+            initDownload(currentMessage.id)
+
+            delay(2000)
+            val messageWithDownload = currentMessage.copy(
+                idDownloadableContent = 0,
+                mediaLink = currentMessage.downloadableContent?.url ?: "",
+                downloadableContent = null
+            )
+
+            // atualizar lista de messagens geral sendo que a mensagem atualizada é a que tem o id igual ao da mensagem com download
+            _uiState.value = _uiState.value.copy(
+                messages = _uiState.value.messages.map { message ->
+                    if (message.id == messageWithDownload.id) {
+                        messageWithDownload
+                    } else {
+                        message
+                    }
+                }
+            )
+        }
+    }
+
+    private fun initDownload(messageId: Long) {
+
+        _uiState.value = _uiState.value.copy(
+            messages = _uiState.value.messages.map { message ->
+                if (message.id == messageId) {
+                    message.copy(
+                        downloadableContent = DownloadableContent(
+                            status = DownloadStatus.DOWNLOADING
+                        )
+                    )
+                } else {
+                    message
+                }
+            }
+        )
+    }
+
+=======
+>>>>>>> f51b0a5 (refact: to code review)
+    fun startDownload(messageId: Long) {
+        val updatedMessages = _uiState.value.messages.map { message ->
+            if (message.id == messageId) {
+                message.copy(
+                    downloadableContent = message.downloadableContent?.copy(
+                        status = DownloadStatus.DOWNLOADING
+                    )
+                )
+            } else {
+                message
+            }
+        }
+
+        _uiState.value = _uiState.value.copy(
+            messages = updatedMessages
+        )
+    }
+
+    fun finishDownload(messageId: Long, contentPath: String) {
+        _uiState.value.messages.map { message ->
+            if (message.id == messageId) {
+                val messageWithoutContentDownload = message.copy(
+                    idDownloadableContent = 0,
+                    downloadableContent = null,
+                    mediaLink = contentPath,
+                )
+                updateSingleMessage(messageWithoutContentDownload)
+                messageWithoutContentDownload
+            } else {
+                message
+            }
+        }
+    }
+
+    fun failDownload(messageId: Long) {
+        val updatedMessages = _uiState.value.messages.map { message ->
+            if (message.id == messageId) {
+                message.copy(
+                    downloadableContent = message.downloadableContent?.copy(
+                        status = DownloadStatus.ERROR
+                    )
+                )
+            } else {
+                message
+            }
+        }
+
+        _uiState.value = _uiState.value.copy(
+            messages = updatedMessages
+        )
+    }
+
+    private fun updateSingleMessage(message: Message) {
+        viewModelScope.launch {
+            messageDao.insert(message)
+        }
+    }
 }
