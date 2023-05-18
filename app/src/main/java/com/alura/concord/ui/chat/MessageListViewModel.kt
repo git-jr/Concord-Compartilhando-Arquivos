@@ -1,5 +1,7 @@
 package com.alura.concord.ui.chat
 
+import android.net.Uri
+import androidx.compose.runtime.internal.updateLiveLiteralValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -227,4 +229,56 @@ class MessageListViewModel @Inject constructor(
             }
         )
     }
+
+    fun startDownload(messageId: Long) {
+        val indexMessage =
+            _uiState.value.messages.indexOf(_uiState.value.messages.first { it.id == messageId })
+        val message = _uiState.value.messages[indexMessage]
+        val updatedMessages = _uiState.value.messages.toMutableList()
+
+        updatedMessages[indexMessage] = message.copy(
+            downloadableContent = message.downloadableContent?.copy(
+                status = DownloadStatus.DOWNLOADING
+            )
+        )
+        _uiState.value = _uiState.value.copy(
+            messages = updatedMessages
+        )
+
+    }
+
+    fun finishDownload(messageId: Long, contentPath: String) {
+        val indexMessage =
+            _uiState.value.messages.indexOf(_uiState.value.messages.first { it.id == messageId })
+        val message = _uiState.value.messages[indexMessage]
+        val updatedMessages = _uiState.value.messages.toMutableList()
+
+        updatedMessages[indexMessage] = message.copy(
+            idDownloadableContent = 0,
+            downloadableContent = null,
+            mediaLink = contentPath,
+        )
+        _uiState.value = _uiState.value.copy(
+            messages = updatedMessages
+        )
+
+    }
+
+
+    fun failDownload(messageId: Long) {
+        val indexMessage =
+            _uiState.value.messages.indexOf(_uiState.value.messages.first { it.id == messageId })
+        val message = _uiState.value.messages[indexMessage]
+        val updatedMessages = _uiState.value.messages.toMutableList()
+
+        updatedMessages[indexMessage] = message.copy(
+            downloadableContent = message.downloadableContent?.copy(
+                status = DownloadStatus.ERROR
+            )
+        )
+        _uiState.value = _uiState.value.copy(
+            messages = updatedMessages
+        )
+    }
+
 }

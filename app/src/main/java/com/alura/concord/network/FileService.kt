@@ -1,13 +1,21 @@
 package com.alura.concord.network
 
+import android.app.DownloadManager
+import android.content.Context
+import android.net.Uri
+import android.os.Environment
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import retrofit2.Retrofit
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Url
+import java.io.File
+import java.util.UUID
 
 
-fun gitHubgetFileSizeInKB(url: String, callback: (Long?) -> Unit) {
+fun gitFileSizeInKB(url: String, callback: (Long?) -> Unit) {
     val retrofit = Retrofit.Builder()
         .baseUrl("https://github.com/")
         .addConverterFactory(ScalarsConverterFactory.create())
@@ -20,6 +28,9 @@ fun gitHubgetFileSizeInKB(url: String, callback: (Long?) -> Unit) {
             call: retrofit2.Call<String>,
             response: retrofit2.Response<String>
         ) {
+            val temp = response.headers()["Content-Range"]
+            val header = response.headers()
+
             val fileSize =
                 response.headers()["Content-Range"]?.substringAfterLast('/')?.toLongOrNull()
                     ?: -1L
@@ -62,6 +73,50 @@ fun formatFileSize(size: Long): String {
 
         else -> {
             "${size / (1024 * 1024)} GB"
+        }
+    }
+}
+
+
+fun makeDownloadDownloadManager(context: Context, url: String) {
+    val fileName = "Arquivo de teste documento.pdf"
+    val request = DownloadManager.Request(Uri.parse(url))
+        .setTitle("Downloading $fileName")
+        .setDescription("Downloading...")
+        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+    val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+    val downloadId = downloadManager.enqueue(request)
+}
+
+
+suspend fun makeDownload(
+    contetx: Context,
+    url: String,
+    fileName: String = UUID.randomUUID().toString(),
+    onFinisheDownload: (String) -> Unit,
+    onFailDownload: () -> Unit
+) {
+    val path = contetx.getExternalFilesDir("temp")
+    val client = OkHttpClient()
+    val request = Request.Builder()
+        .url(url)
+        .build()
+
+    client.newCall(request).execute().use { response ->
+        response.body?.byteStream()?.use { input ->
+            val target = File(path, fileName)
+
+            target.outputStream().use { output ->
+                input.copyTo(output)
+                if (!target.exists()) {
+                    onFailDownload()
+                    return
+                } else {
+                    onFinisheDownload(Uri.fromFile(target).toString())
+                }
+            }
+
         }
     }
 }

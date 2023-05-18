@@ -7,22 +7,29 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
+import com.alura.concord.extensions.showLog
 import com.alura.concord.extensions.showMessage
 import com.alura.concord.media.getAllImages
 import com.alura.concord.media.getNameByUri
 import com.alura.concord.media.imagePermission
 import com.alura.concord.media.persistUriPermission
 import com.alura.concord.media.verifyPermission
+import com.alura.concord.network.fileMore1MB
+import com.alura.concord.network.fileMore700MB
+import com.alura.concord.network.makeDownload
 import com.alura.concord.ui.chat.MessageListViewModel
 import com.alura.concord.ui.chat.MessageScreen
 import com.alura.concord.ui.components.ModalBottomSheetFile
 import com.alura.concord.ui.components.ModalBottomSheetSticker
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.launch
 
 internal const val messageChatRoute = "messages"
 internal const val messageChatIdArgument = "chatId"
@@ -52,6 +59,8 @@ fun NavGraphBuilder.messageListScreen(
                     }
                 }
 
+
+            val scope = rememberCoroutineScope { IO }
             MessageScreen(
                 state = uiState,
                 onSendMessage = {
@@ -74,7 +83,23 @@ fun NavGraphBuilder.messageListScreen(
                     onBack()
                 },
                 onContentDownload = { message ->
-                    viewModelMessage.simulatedDownload(message)
+                    viewModelMessage.startDownload(message.id)
+
+                    message.downloadableContent?.let { content ->
+                        scope.launch {
+                            makeDownload(
+                                context,
+                                content.url,
+                                "Arquivo.png",
+                                onFinisheDownload = { contentPath ->
+                                    context.showLog("Quando acabar os testes, chamar MessageDAO para atualizar direto no banco")
+                                    viewModelMessage.finishDownload(message.id, contentPath)
+                                },
+                                onFailDownload = {
+                                    viewModelMessage.failDownload(message.id)
+                                })
+                        }
+                    }
                 },
             )
 
