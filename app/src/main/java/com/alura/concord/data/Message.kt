@@ -17,7 +17,7 @@ data class Message(
     @ColumnInfo(defaultValue = "0")
     var idDownloadableContent: Long? = null,
     @Ignore
-    var downloadableContent: DownloadableContent? = null
+    var downloadableContent: DownloadableContent? = null,
 ) {
     constructor() : this(0L, 0L, "", Author.OTHER, "", "", null)
 }

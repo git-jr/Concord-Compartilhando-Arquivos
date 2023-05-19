@@ -1,6 +1,7 @@
 package com.alura.concord.ui.chat
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
@@ -18,6 +19,10 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -35,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alura.concord.R
 import com.alura.concord.data.Author
-import com.alura.concord.data.DownloadableContent
 import com.alura.concord.data.Message
 import com.alura.concord.data.messageListSample
 import com.alura.concord.ui.components.*
@@ -50,6 +54,7 @@ fun MessageScreen(
     onDeselectMedia: () -> Unit = {},
     onBack: () -> Unit = {},
     onContentDownload: (Message) -> Unit = {},
+    onShowFileOptions: (Message) -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -69,19 +74,26 @@ fun MessageScreen(
                     .padding(horizontal = 16.dp)
                     .weight(8f), reverseLayout = true
             ) {
-                items(state.messages.reversed(), contentType = { it.author }) { it ->
-                    when (it.author) {
+                items(state.messages.reversed(), contentType = { it.author }) { message ->
+
+
+                    val scope = rememberCoroutineScope()
+
+                    when (message.author) {
                         Author.OTHER -> {
                             MessageItemOther(
-                                it,
+                                message = message,
                                 onContentDownload = {
-                                    onContentDownload(it)
+                                    onContentDownload(message)
+                                },
+                                onShowFileOptions = {
+                                    onShowFileOptions(message)
                                 },
                             )
                         }
 
                         Author.USER -> {
-                            MessageItemUser(it)
+                            MessageItemUser(message)
                         }
                     }
 

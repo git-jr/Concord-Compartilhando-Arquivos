@@ -21,15 +21,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        CoroutineScope(IO).launch {
-            gitFileSizeInKB(fileMore1MB) {
-                it?.let { tamanhoEmkb ->
-                    showLog("Tamanho arquivo ${formatFileSize(tamanhoEmkb)}")
-                } ?: run {
-                    showLog("Erro ao obter tamanho do arquivo")
-                }
-            }
-        }
+//        CoroutineScope(IO).launch {
+//            gitFileSizeInKB(fileMore1MB) {
+//                it?.let { tamanhoEmkb ->
+//                    showLog("Tamanho arquivo ${formatFileSize(tamanhoEmkb)}")
+//                } ?: run {
+//                    showLog("Erro ao obter tamanho do arquivo")
+//                }
+//            }
+//        }
 
 
         setContent {

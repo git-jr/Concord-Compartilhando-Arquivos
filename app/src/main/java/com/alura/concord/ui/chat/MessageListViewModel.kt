@@ -1,7 +1,5 @@
 package com.alura.concord.ui.chat
 
-import android.net.Uri
-import androidx.compose.runtime.internal.updateLiveLiteralValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -190,6 +188,13 @@ class MessageListViewModel @Inject constructor(
         )
     }
 
+    fun setShowFileOptions(message: Message? = null, show: Boolean) {
+        _uiState.value = _uiState.value.copy(
+            showDialogFileOptions = show,
+            selectedMessage = message ?: Message()
+        )
+    }
+
     fun simulatedDownload(currentMessage: Message) {
         viewModelScope.launch {
             initDownload(currentMessage.id)
@@ -232,7 +237,7 @@ class MessageListViewModel @Inject constructor(
 
     fun startDownload(messageId: Long) {
         val indexMessage =
-            _uiState.value.messages.indexOf(_uiState.value.messages.first { it.id == messageId })
+            _uiState.value.messages.indexOfFirst { it.id == messageId }
         val message = _uiState.value.messages[indexMessage]
         val updatedMessages = _uiState.value.messages.toMutableList()
 
@@ -249,7 +254,7 @@ class MessageListViewModel @Inject constructor(
 
     fun finishDownload(messageId: Long, contentPath: String) {
         val indexMessage =
-            _uiState.value.messages.indexOf(_uiState.value.messages.first { it.id == messageId })
+            _uiState.value.messages.indexOfFirst { it.id == messageId }
         val message = _uiState.value.messages[indexMessage]
         val updatedMessages = _uiState.value.messages.toMutableList()
 
@@ -267,7 +272,7 @@ class MessageListViewModel @Inject constructor(
 
     fun failDownload(messageId: Long) {
         val indexMessage =
-            _uiState.value.messages.indexOf(_uiState.value.messages.first { it.id == messageId })
+            _uiState.value.messages.indexOfFirst { it.id == messageId }
         val message = _uiState.value.messages[indexMessage]
         val updatedMessages = _uiState.value.messages.toMutableList()
 

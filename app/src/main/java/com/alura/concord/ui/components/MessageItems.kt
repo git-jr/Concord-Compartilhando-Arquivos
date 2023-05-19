@@ -1,8 +1,13 @@
 package com.alura.concord.ui.components
 
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,11 +18,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -29,6 +40,8 @@ import com.alura.concord.data.DownloadStatus
 import com.alura.concord.data.DownloadableContent
 import com.alura.concord.data.Message
 import com.alura.concord.network.formatFileSize
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun MessageItemUser(message: Message) {
@@ -111,12 +124,40 @@ fun MessageItemUser(message: Message) {
 @Composable
 fun MessageItemOther(
     message: Message,
+    modifier: Modifier = Modifier,
     onContentDownload: () -> Unit = {},
+    onShowFileOptions: (Message) -> Unit = {},
 ) {
+    var isSelected by remember { mutableStateOf(false) }
+
+    val color by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.3f) else Color.Transparent,
+        animationSpec = tween(durationMillis = 600)
+    )
+    val scope = rememberCoroutineScope()
+
+
     Column(
-        modifier = Modifier
+        modifier = modifier
+            .background(
+                color
+            )
             .padding(vertical = 8.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onLongPress = {
+                        onShowFileOptions(message)
+                        scope.launch {
+                            isSelected = true
+                            delay(800)
+                            isSelected = false
+
+                        }
+                    },
+                    onTap = {}
+                )
+            },
         horizontalAlignment = Alignment.Start
     ) {
         Row(Modifier.padding(end = 50.dp)) {
@@ -263,6 +304,6 @@ fun MessageItemOtherPreview() {
                 "file",
                 123456
             )
-        )
+        ),
     )
 }
