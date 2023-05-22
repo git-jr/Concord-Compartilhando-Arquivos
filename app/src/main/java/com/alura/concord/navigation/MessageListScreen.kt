@@ -49,11 +49,13 @@ import com.alura.concord.network.makeDownload
 import com.alura.concord.ui.chat.MessageListViewModel
 import com.alura.concord.ui.chat.MessageScreen
 import com.alura.concord.ui.components.ModalBottomSheetFile
+import com.alura.concord.ui.components.ModalBottomSheetShare
 import com.alura.concord.ui.components.ModalBottomSheetSticker
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
 
 
@@ -85,9 +87,9 @@ fun NavGraphBuilder.messageListScreen(
                     }
                 }
 
+            val scope = rememberCoroutineScope { IO }
 
             var selectMessage: Boolean = false
-            val scope = rememberCoroutineScope { IO }
             MessageScreen(
                 state = uiState,
                 onSendMessage = {
@@ -129,8 +131,8 @@ fun NavGraphBuilder.messageListScreen(
                     }
                 },
                 onShowFileOptions = { selectedMessage ->
-//                    selectMessage = it.isSelected
-//                    it.isSelected = selectMessage
+//                    selectMessage = selectedMessage.isSelected
+//                    selectedMessage.isSelected = selectMessage
 
                     viewModelMessage.setShowFileOptions(selectedMessage, true)
                 }
@@ -138,19 +140,6 @@ fun NavGraphBuilder.messageListScreen(
 
             if (uiState.showDialogFileOptions) {
                 DialogShareFile(viewModelMessage)
-
-//                try {
-//                    val sendIntent: Intent = Intent().apply {
-//                        action = Intent.ACTION_SEND
-//                        putExtra(Intent.EXTRA_TEXT, "This is my text to send.")
-//                        type = "text/plain"
-//                    }
-//                    context.startActivity(sendIntent)
-//
-//                } catch (e: Exception) {
-//                    //App not found
-//                    e.printStackTrace()
-//                }
             }
 
             if (uiState.showBottomSheetSticker) {
@@ -217,10 +206,151 @@ fun NavGraphBuilder.messageListScreen(
                         viewModelMessage.setShowBottomSheetFile(false)
                     })
             }
+
+            val choseFolderResultLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.CreateDocument("*/*"),
+                onResult = {
+                    it?.let { path ->
+
+                        var mediaToOpen = uiState.selectedMessage.mediaLink
+
+                        mediaToOpen =
+                            "/storage/emulated/0/Android/data/com.alura.concord/files/temp/Documento.pdf"
+
+                        mediaToOpen =
+                            "/storage/emulated/0/Android/data/com.alura.concord/files/temp/Arquivo.png"
+
+                        scope.launch {
+                            moveFile(
+                                originalPathFile = mediaToOpen,
+                                destinationFile = path,
+                                context = context
+                            )
+                        }
+                    }
+                }
+            )
+
+
+            if (uiState.showBottomSheetShare) {
+                var mediaToOpen = uiState.selectedMessage.mediaLink
+
+                mediaToOpen =
+                    "/storage/emulated/0/Android/data/com.alura.concord/files/temp/Arquivo.png"
+
+                mediaToOpen =
+                    "/storage/emulated/0/Android/data/com.alura.concord/files/temp/Documento.pdf"
+
+
+                ModalBottomSheetShare(
+                    onOpenWith = {
+                        viewModelMessage.setShowBottomSheetShare(false)
+                        openWith(mediaToOpen, context)
+                    },
+                    onShare = {
+                        shareFile(mediaToOpen, context)
+                        viewModelMessage.setShowBottomSheetShare(false)
+                    },
+                    onSave = {
+                        var nameFile =
+                            context.getNameByUri(Uri.parse(mediaToOpen))
+
+                        // Isso aqui só para os teste aonde não temo como passar a URI em si,
+                        // na versão final provavelmente vai será só context.getNameByUri() mesmo
+                        nameFile = File(mediaToOpen).name
+
+                        choseFolderResultLauncher.launch(nameFile)
+                        viewModelMessage.setShowBottomSheetShare(false)
+                    },
+                    onBack = {
+                        viewModelMessage.setShowBottomSheetShare(false)
+                    })
+            }
         }
     }
 }
 
+private fun openWith(
+    mediaLink: String,
+    context: Context
+) {
+    val file = File(mediaLink)
+    val fileUri = FileProvider.getUriForFile(
+        context,
+        "com.alura.concord.fileprovider",
+        file
+    )
+
+    val fileExtension = MimeTypeMap.getFileExtensionFromUrl(file.path)
+    val mimeTypeFromFile =
+        MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
+
+    val shareIntent: Intent = Intent().apply {
+        action = Intent.ACTION_VIEW
+        setDataAndType(fileUri, "*/*")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+
+    val chooserIntent = Intent.createChooser(shareIntent, "Abrir com")
+    context.startActivity(chooserIntent)
+}
+
+
+private fun shareFile(
+    mediaLink: String,
+    context: Context
+) {
+    val file = File(mediaLink)
+    val fileUri = FileProvider.getUriForFile(
+        context,
+        "com.alura.concord.fileprovider",
+        file
+    )
+
+    val fileExtension = MimeTypeMap.getFileExtensionFromUrl(file.path)
+    val mimeTypeFromFile =
+        MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
+
+    val shareIntent: Intent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_STREAM, fileUri)
+        setDataAndType(fileUri, "*/*")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+
+    val chooserIntent = Intent.createChooser(shareIntent, "Compartilhar")
+    context.startActivity(chooserIntent)
+}
+
+
+private fun moveFile(originalPathFile: String, destinationFile: Uri, context: Context) {
+    try {
+        val originalFile =
+            File(originalPathFile)
+
+        val inputStream = FileInputStream(originalFile)
+        val contentResolver = context.contentResolver
+        val outputStream = contentResolver.openOutputStream(destinationFile)
+
+        inputStream.use { input ->
+            outputStream.use { output ->
+                output?.let { input.copyTo(it) }
+            }
+        }
+
+
+//        // Depois de criar o novo arquivo, vamos apagar o antigo
+//        if (originalFile.delete()) {
+//            Log.d("File deletion", "Success! Original file deleted")
+//        } else {
+//            Log.e("File deletion", "Failed to delete original file")
+//        }
+
+    } catch (e: Exception) {
+        // Tratamento de erro
+        Log.e("File move error", e.toString())
+    }
+}
 
 @Composable
 private fun DialogShareFile(viewModelMessage: MessageListViewModel) {
@@ -235,7 +365,7 @@ private fun DialogShareFile(viewModelMessage: MessageListViewModel) {
                 scope.launch {
 
 //                    saveFileIn(context, path)
-                    moveFile(path, context)
+                    moveFileBase(path, context)
                 }
             }
         }
@@ -404,8 +534,7 @@ suspend fun saveFileIn(context: Context, destinationUri: Uri): Boolean {
 }
 
 
-fun moveFile(destinationUri: Uri, context: Context) {
-
+fun moveFileBase(destinationUri: Uri, context: Context) {
     try {
         val fileToMove =
             File("/storage/self/primary/Android/data/com.alura.concord/files/temp/Arquivo.png")

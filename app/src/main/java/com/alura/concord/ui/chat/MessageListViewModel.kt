@@ -188,9 +188,17 @@ class MessageListViewModel @Inject constructor(
         )
     }
 
+
+    fun setShowBottomSheetShare(value: Boolean) {
+        _uiState.value = _uiState.value.copy(
+            showBottomSheetShare = value,
+        )
+    }
+
+
     fun setShowFileOptions(message: Message? = null, show: Boolean) {
         _uiState.value = _uiState.value.copy(
-            showDialogFileOptions = show,
+            showBottomSheetShare = show,
             selectedMessage = message ?: Message()
         )
     }
@@ -285,5 +293,4 @@ class MessageListViewModel @Inject constructor(
             messages = updatedMessages
         )
     }
-
 }
