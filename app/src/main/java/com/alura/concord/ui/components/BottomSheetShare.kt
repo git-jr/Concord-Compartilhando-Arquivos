@@ -108,13 +108,12 @@ fun BottomSheetShare(
             Spacer(modifier = Modifier.width(16.dp))
 
             Text(
-                text = "Camapartilhar",
+                text = "Compartilhar",
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 color = MaterialTheme.colorScheme.primary
             )
-
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -142,7 +141,6 @@ fun BottomSheetShare(
                 color = MaterialTheme.colorScheme.primary
             )
         }
-
 
         Spacer(modifier = Modifier.height(32.dp))
     }

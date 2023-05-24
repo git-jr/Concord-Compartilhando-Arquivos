@@ -1,18 +1,25 @@
 package com.alura.concord.ui.components
 
-import androidx.compose.animation.animateColor
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,7 +46,7 @@ import com.alura.concord.R
 import com.alura.concord.data.DownloadStatus
 import com.alura.concord.data.DownloadableContent
 import com.alura.concord.data.Message
-import com.alura.concord.network.formatFileSize
+import com.alura.concord.media.formatReadableFileSize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -130,18 +137,15 @@ fun MessageItemOther(
 ) {
     var isSelected by remember { mutableStateOf(false) }
 
-    val color by animateColorAsState(
+    val containerColor by animateColorAsState(
         targetValue = if (isSelected) MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.3f) else Color.Transparent,
         animationSpec = tween(durationMillis = 600)
     )
     val scope = rememberCoroutineScope()
 
-
     Column(
         modifier = modifier
-            .background(
-                color
-            )
+            .background(containerColor)
             .padding(vertical = 8.dp)
             .fillMaxWidth()
             .pointerInput(Unit) {
@@ -152,10 +156,8 @@ fun MessageItemOther(
                             isSelected = true
                             delay(800)
                             isSelected = false
-
                         }
                     },
-                    onTap = {}
                 )
             },
         horizontalAlignment = Alignment.Start
@@ -185,15 +187,13 @@ fun MessageItemOther(
                             .size(200.dp),
                         contentAlignment = Alignment.Center
                     ) {
-
                         DownloadButton(
                             status = contentFile.status,
-                            fileSize = formatFileSize(contentFile.size),
+                            fileSize = formatReadableFileSize(contentFile.size),
                             onClickDownload = {
                                 onContentDownload()
                             }
                         )
-
                     }
                 }
 
@@ -249,7 +249,6 @@ fun DownloadButton(
     onClickDownload: () -> Unit = {},
     status: DownloadStatus
 ) {
-
     Row(modifier = modifier
         .clickable { onClickDownload() }
         .padding(12.dp)) {
@@ -271,7 +270,7 @@ fun DownloadButton(
             } else {
 
                 Icon(
-                    Icons.Default.ArrowDropDown,
+                    painter = painterResource(id = R.drawable.ic_download),
                     contentDescription = null,
                     tint = Color.White
                 )
@@ -283,7 +282,6 @@ fun DownloadButton(
             }
         }
     }
-
 }
 
 
@@ -300,9 +298,10 @@ fun MessageItemOtherPreview() {
         Message(
             idDownloadableContent = 1,
             downloadableContent = DownloadableContent(
-                1,
-                "file",
-                123456
+                id = 1,
+                name = "Arquivo teste.pdf",
+                url = "url.teste",
+                size = 123456,
             )
         ),
     )

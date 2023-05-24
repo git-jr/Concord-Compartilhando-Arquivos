@@ -1,7 +1,6 @@
 package com.alura.concord.ui.chat
 
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
@@ -19,10 +18,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -76,9 +71,6 @@ fun MessageScreen(
             ) {
                 items(state.messages.reversed(), contentType = { it.author }) { message ->
 
-
-                    val scope = rememberCoroutineScope()
-
                     when (message.author) {
                         Author.OTHER -> {
                             MessageItemOther(
@@ -96,7 +88,6 @@ fun MessageScreen(
                             MessageItemUser(message)
                         }
                     }
-
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))

@@ -14,7 +14,6 @@ import com.alura.concord.database.MessageDao
 import com.alura.concord.navigation.messageChatIdArgument
 import com.alura.concord.util.getFormattedCurrentDate
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,7 +37,6 @@ class MessageListViewModel @Inject constructor(
         requireNotNull(savedStateHandle.get<String>(messageChatIdArgument)?.toLong())
 
     init {
-//        initWithSamples()
         loadDatas()
 
         _uiState.update { state ->
@@ -89,7 +87,6 @@ class MessageListViewModel @Inject constructor(
                                 messages = _uiState.value.messages + messageWithDownloadableContent
                             )
                         }
-
                     } else {
                         _uiState.value = _uiState.value.copy(
                             messages = _uiState.value.messages + searchedMessage
@@ -107,7 +104,6 @@ class MessageListViewModel @Inject constructor(
                     .first()
             )
         }
-
     }
 
     private fun loadChatsInfos() {
@@ -203,94 +199,61 @@ class MessageListViewModel @Inject constructor(
         )
     }
 
-    fun simulatedDownload(currentMessage: Message) {
-        viewModelScope.launch {
-            initDownload(currentMessage.id)
-
-            delay(2000)
-            val messageWithDownload = currentMessage.copy(
-                idDownloadableContent = 0,
-                mediaLink = currentMessage.downloadableContent?.url ?: "",
-                downloadableContent = null
-            )
-
-            // atualizar lista de messagens geral sendo que a mensagem atualizada é a que tem o id igual ao da mensagem com download
-            _uiState.value = _uiState.value.copy(
-                messages = _uiState.value.messages.map { message ->
-                    if (message.id == messageWithDownload.id) {
-                        messageWithDownload
-                    } else {
-                        message
-                    }
-                }
-            )
-        }
-    }
-
-    private fun initDownload(messageId: Long) {
-        _uiState.value = _uiState.value.copy(
-            messages = _uiState.value.messages.map { message ->
-                if (message.id == messageId) {
-                    message.copy(
-                        downloadableContent = DownloadableContent(
-                            status = DownloadStatus.DOWNLOADING
-                        )
-                    )
-                } else {
-                    message
-                }
-            }
-        )
-    }
-
     fun startDownload(messageId: Long) {
-        val indexMessage =
-            _uiState.value.messages.indexOfFirst { it.id == messageId }
-        val message = _uiState.value.messages[indexMessage]
-        val updatedMessages = _uiState.value.messages.toMutableList()
+        val updatedMessages = _uiState.value.messages.map { message ->
+            if (message.id == messageId) {
+                message.copy(
+                    downloadableContent = message.downloadableContent?.copy(
+                        status = DownloadStatus.DOWNLOADING
+                    )
+                )
+            } else {
+                message
+            }
+        }
 
-        updatedMessages[indexMessage] = message.copy(
-            downloadableContent = message.downloadableContent?.copy(
-                status = DownloadStatus.DOWNLOADING
-            )
-        )
         _uiState.value = _uiState.value.copy(
             messages = updatedMessages
         )
-
     }
 
     fun finishDownload(messageId: Long, contentPath: String) {
-        val indexMessage =
-            _uiState.value.messages.indexOfFirst { it.id == messageId }
-        val message = _uiState.value.messages[indexMessage]
-        val updatedMessages = _uiState.value.messages.toMutableList()
-
-        updatedMessages[indexMessage] = message.copy(
-            idDownloadableContent = 0,
-            downloadableContent = null,
-            mediaLink = contentPath,
-        )
-        _uiState.value = _uiState.value.copy(
-            messages = updatedMessages
-        )
-
+        _uiState.value.messages.map { message ->
+            if (message.id == messageId) {
+                val messageWithoutContentDownload = message.copy(
+                    idDownloadableContent = 0,
+                    downloadableContent = null,
+                    mediaLink = contentPath,
+                )
+                updateSingleMessage(messageWithoutContentDownload)
+                messageWithoutContentDownload
+            } else {
+                message
+            }
+        }
     }
 
-
     fun failDownload(messageId: Long) {
-        val indexMessage =
-            _uiState.value.messages.indexOfFirst { it.id == messageId }
-        val message = _uiState.value.messages[indexMessage]
-        val updatedMessages = _uiState.value.messages.toMutableList()
+        val updatedMessages = _uiState.value.messages.map { message ->
+            if (message.id == messageId) {
+                message.copy(
+                    downloadableContent = message.downloadableContent?.copy(
+                        status = DownloadStatus.ERROR
+                    )
+                )
+            } else {
+                message
+            }
+        }
 
-        updatedMessages[indexMessage] = message.copy(
-            downloadableContent = message.downloadableContent?.copy(
-                status = DownloadStatus.ERROR
-            )
-        )
         _uiState.value = _uiState.value.copy(
             messages = updatedMessages
         )
+    }
+
+    private fun updateSingleMessage(message: Message) {
+        viewModelScope.launch {
+            messageDao.insert(message)
+        }
     }
 }

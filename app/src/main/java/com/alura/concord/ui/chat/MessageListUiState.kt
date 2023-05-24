@@ -18,6 +18,5 @@ data class MessageListUiState(
     val showBottomSheetFile: Boolean = false,
     val showBottomSheetShare: Boolean = false,
     val onMakeContentDownload: (Boolean) -> Unit = {},
-    val showDialogFileOptions: Boolean = false,
     val selectedMessage: Message = Message(),
 )
