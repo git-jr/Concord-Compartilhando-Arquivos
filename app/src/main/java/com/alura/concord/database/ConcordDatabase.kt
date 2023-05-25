@@ -4,11 +4,11 @@ import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.alura.concord.data.Chat
-import com.alura.concord.data.DownloadableContent
+import com.alura.concord.data.DownloadableEntity
 import com.alura.concord.data.Message
 
 @Database(
-    entities = [Chat::class, Message::class, DownloadableContent::class],
+    entities = [Chat::class, Message::class, DownloadableEntity::class],
     version = 2,
     exportSchema = true,
     autoMigrations = [

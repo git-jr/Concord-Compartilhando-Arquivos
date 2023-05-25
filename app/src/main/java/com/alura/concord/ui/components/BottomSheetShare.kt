@@ -40,9 +40,18 @@ fun ModalBottomSheetShare(
         containerColor = MaterialTheme.colorScheme.onPrimaryContainer,
         content = {
             BottomSheetShare(
-                onOpenWith = { onOpenWith() },
-                onShare = { onShare() },
-                onSave = { onSave() }
+                onOpenWith = {
+                    onOpenWith()
+                    onBack()
+                },
+                onShare = {
+                    onShare()
+                    onBack()
+                },
+                onSave = {
+                    onSave()
+                    onBack()
+                }
             )
         },
         onDismissRequest = {

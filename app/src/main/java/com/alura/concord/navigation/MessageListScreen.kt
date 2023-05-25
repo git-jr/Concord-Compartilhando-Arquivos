@@ -1,6 +1,5 @@
 package com.alura.concord.navigation
 
-import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -24,14 +23,15 @@ import com.alura.concord.media.openWith
 import com.alura.concord.media.persistUriPermission
 import com.alura.concord.media.shareFile
 import com.alura.concord.media.verifyPermission
-import com.alura.concord.network.makeDownload
+import com.alura.concord.network.makeDownlaodByUrl
+import com.alura.concord.network.saveFileOnInternalStorage
 import com.alura.concord.ui.chat.MessageListViewModel
 import com.alura.concord.ui.chat.MessageScreen
 import com.alura.concord.ui.components.ModalBottomSheetFile
 import com.alura.concord.ui.components.ModalBottomSheetShare
 import com.alura.concord.ui.components.ModalBottomSheetSticker
-import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
+import java.io.File
 
 
 internal const val messageChatRoute = "messages"
@@ -62,7 +62,7 @@ fun NavGraphBuilder.messageListScreen(
                     }
                 }
 
-            val scope = rememberCoroutineScope { IO }
+            val scope = rememberCoroutineScope()
 
             MessageScreen(
                 state = uiState,
@@ -87,18 +87,31 @@ fun NavGraphBuilder.messageListScreen(
                 },
                 onContentDownload = { message ->
                     viewModelMessage.startDownload(message.id)
-
-                    message.downloadableContent?.let { content ->
+                    message.downloadableFile?.let {
                         scope.launch {
-                            context.makeDownload(
-                                content.url,
-                                content.name,
-                                onFinisheDownload = { contentPath ->
-                                    viewModelMessage.finishDownload(message.id, contentPath)
+                            makeDownlaodByUrl(
+                                url = it.content.url,
+                                onFinisheDownload = { inputStream ->
+                                    scope.launch {
+                                        context.saveFileOnInternalStorage(
+                                            inputStream = inputStream,
+                                            fileName = it.content.name,
+                                            onSuccess = { contentPath ->
+                                                viewModelMessage.finishDownload(
+                                                    message.id,
+                                                    contentPath
+                                                )
+                                            },
+                                            onFailure = {
+                                                viewModelMessage.failDownload(message.id)
+                                            }
+                                        )
+                                    }
                                 },
-                                onFailDownload = {
+                                onFailureDownload = {
                                     viewModelMessage.failDownload(message.id)
-                                })
+                                }
+                            )
                         }
                     }
                 },
@@ -179,7 +192,7 @@ fun NavGraphBuilder.messageListScreen(
                         val mediaToOpen = uiState.selectedMessage.mediaLink
                         scope.launch {
                             context.moveFile(
-                                originalPathFile = mediaToOpen,
+                                sourcePathFile = mediaToOpen,
                                 destinationFile = selectedPath
                             )
                         }
@@ -193,19 +206,14 @@ fun NavGraphBuilder.messageListScreen(
 
                 ModalBottomSheetShare(
                     onOpenWith = {
-                        viewModelMessage.setShowBottomSheetShare(false)
                         context.openWith(mediaToOpen)
                     },
                     onShare = {
                         context.shareFile(mediaToOpen)
-                        viewModelMessage.setShowBottomSheetShare(false)
                     },
                     onSave = {
-                        val fileName =
-                            context.getNameByUri(Uri.parse(mediaToOpen))
-
-                        createFile.launch(fileName)
-                        viewModelMessage.setShowBottomSheetShare(false)
+                        val fileExtension = File(mediaToOpen).extension
+                        createFile.launch("fileName.$fileExtension")
                     },
                     onBack = {
                         viewModelMessage.setShowBottomSheetShare(false)

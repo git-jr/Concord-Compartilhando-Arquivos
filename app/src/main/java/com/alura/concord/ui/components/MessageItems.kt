@@ -44,7 +44,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alura.concord.R
 import com.alura.concord.data.DownloadStatus
-import com.alura.concord.data.DownloadableContent
+import com.alura.concord.data.DownloadableEntity
+import com.alura.concord.data.DownloadableFile
 import com.alura.concord.data.Message
 import com.alura.concord.media.formatReadableFileSize
 import kotlinx.coroutines.delay
@@ -181,7 +182,7 @@ fun MessageItemOther(
                     .padding(4.dp)
                     .width(intrinsicSizeLayout)
             ) {
-                message.downloadableContent?.let { contentFile ->
+                message.downloadableFile?.let { contentFile ->
                     Box(
                         modifier = Modifier
                             .size(200.dp),
@@ -189,7 +190,7 @@ fun MessageItemOther(
                     ) {
                         DownloadButton(
                             status = contentFile.status,
-                            fileSize = formatReadableFileSize(contentFile.size),
+                            fileSize = formatReadableFileSize(contentFile.content.size),
                             onClickDownload = {
                                 onContentDownload()
                             }
@@ -268,7 +269,6 @@ fun DownloadButton(
                     color = Color.White
                 )
             } else {
-
                 Icon(
                     painter = painterResource(id = R.drawable.ic_download),
                     contentDescription = null,
@@ -296,12 +296,14 @@ fun MessageItemUserPreview() {
 fun MessageItemOtherPreview() {
     MessageItemOther(
         Message(
-            idDownloadableContent = 1,
-            downloadableContent = DownloadableContent(
-                id = 1,
-                name = "Arquivo teste.pdf",
-                url = "url.teste",
-                size = 123456,
+            idDownloadableFile = 1,
+            downloadableFile = DownloadableFile(
+                status = DownloadStatus.DOWNLOADING,
+                content = DownloadableEntity(
+                    name = "Arquivo teste.pdf",
+                    url = "url.teste",
+                    size = 123456,
+                )
             )
         ),
     )

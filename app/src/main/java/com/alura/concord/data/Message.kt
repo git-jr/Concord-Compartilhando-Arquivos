@@ -15,9 +15,9 @@ data class Message(
     var date: String = "",
     var mediaLink: String = "",
     @ColumnInfo(defaultValue = "0")
-    var idDownloadableContent: Long? = null,
+    var idDownloadableFile: Long? = null,
     @Ignore
-    var downloadableContent: DownloadableContent? = null,
+    var downloadableFile: DownloadableFile? = null,
 ) {
     constructor() : this(0L, 0L, "", Author.OTHER, "", "", null)
 }

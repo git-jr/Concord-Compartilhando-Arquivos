@@ -27,7 +27,8 @@ class DatabaseModule {
             context,
             ConcordDatabase::class.java,
             DATABASE_NAME
-        ).createFromAsset("database/concord.db")
+        )
+            .createFromAsset("database/concord.db")
             .build()
     }
 

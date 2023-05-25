@@ -5,12 +5,14 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
-import com.alura.concord.extensions.showLog
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
+
+const val FILE_INFO = "FILE"
 
 fun Context.getAllImages(onLoadImages: (List<String>) -> Unit) {
     val images = mutableListOf<String>()
@@ -51,7 +53,6 @@ fun Context.getNameByUri(uri: Uri): String? {
             nameIndex?.let { cursor.getString(it) }
         }
 }
-
 
 
 fun Context.openWith(
@@ -106,43 +107,43 @@ fun Context.shareFile(
 
 
 fun Context.moveFile(
-    originalPathFile: String,
+    sourcePathFile: String,
     destinationFile: Uri
 ) {
     try {
-        val originalFile =
-            File(originalPathFile)
+        val fileToMove = File(sourcePathFile)
 
-        val inputStream = FileInputStream(originalFile)
+        val inputStream = FileInputStream(fileToMove)
         val contentResolver = this.contentResolver
         val outputStream = contentResolver.openOutputStream(destinationFile)
 
         inputStream.use { input ->
-            outputStream.use { output ->
-                output?.let { input.copyTo(it) }
+            outputStream?.use { output ->
+                output.let { input.copyTo(it) }
             }
         }
 
-
-        // Depois de criar o novo arquivo, vamos apagar o antigo para concluir a ação "Mover"
-        if (originalFile.delete()) {
-            this.showLog("Success! Original file deleted")
+        if (fileToMove.delete()) {
+            Log.i(FILE_INFO, "Success! Original file deleted")
         } else {
-            this.showLog("Failed to delete original file")
+            Log.i(FILE_INFO, "Failed to delete original file")
         }
 
     } catch (e: FileNotFoundException) {
-        this.showLog("File not found: ${e.message}")
+        Log.i(FILE_INFO, "File not found: ${e.message}")
     }
 }
 
 fun formatReadableFileSize(size: Long): String {
+    val kilobyte = 1024
+    val megaByte = kilobyte * 1024
+
     return when {
-        size < 1024 -> {
+        size < kilobyte -> {
             "$size KB"
         }
 
-        size < 1024 * 1024 -> {
+        size < megaByte -> {
             "${size / 1024} MB"
         }
 

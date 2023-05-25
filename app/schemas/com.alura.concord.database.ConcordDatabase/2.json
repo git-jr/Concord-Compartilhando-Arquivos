@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "931b44a5c1fd5a9a343b8785277dcedd",
+    "identityHash": "ee6d7cfe36d0887bfbb0fefe4029a288",
     "entities": [
       {
         "tableName": "Chat",
@@ -38,7 +38,7 @@
       },
       {
         "tableName": "Message",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `chatId` INTEGER NOT NULL, `content` TEXT NOT NULL, `author` TEXT NOT NULL, `date` TEXT NOT NULL, `mediaLink` TEXT NOT NULL, `idDownloadableContent` INTEGER DEFAULT 0)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `chatId` INTEGER NOT NULL, `content` TEXT NOT NULL, `author` TEXT NOT NULL, `date` TEXT NOT NULL, `mediaLink` TEXT NOT NULL, `idDownloadableFile` INTEGER DEFAULT 0)",
         "fields": [
           {
             "fieldPath": "id",
@@ -77,8 +77,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "idDownloadableContent",
-            "columnName": "idDownloadableContent",
+            "fieldPath": "idDownloadableFile",
+            "columnName": "idDownloadableFile",
             "affinity": "INTEGER",
             "notNull": false,
             "defaultValue": "0"
@@ -94,7 +94,7 @@
         "foreignKeys": []
       },
       {
-        "tableName": "DownloadableContent",
+        "tableName": "DownloadableEntity",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `url` TEXT NOT NULL, `size` INTEGER NOT NULL)",
         "fields": [
           {
@@ -135,7 +135,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '931b44a5c1fd5a9a343b8785277dcedd')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ee6d7cfe36d0887bfbb0fefe4029a288')"
     ]
   }
 }

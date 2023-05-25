@@ -4,15 +4,15 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy.Companion.REPLACE
 import androidx.room.Query
-import com.alura.concord.data.DownloadableContent
+import com.alura.concord.data.DownloadableEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface DownloadableContentDao {
 
     @Insert(onConflict = REPLACE)
-    fun insert(downloadableContent: DownloadableContent)
+    suspend fun insert(downloadableEntity: DownloadableEntity)
 
-    @Query("SELECT * FROM DownloadableContent WHERE id = :id")
-    fun getById(id: Long): Flow<DownloadableContent?>
+    @Query("SELECT * FROM DownloadableEntity WHERE id = :id")
+    fun getById(id: Long): Flow<DownloadableEntity?>
 }

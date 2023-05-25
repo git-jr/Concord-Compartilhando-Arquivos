@@ -88,6 +88,7 @@ fun MessageScreen(
                             MessageItemUser(message)
                         }
                     }
+
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))

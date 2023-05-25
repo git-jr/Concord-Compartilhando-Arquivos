@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alura.concord.data.Author
 import com.alura.concord.data.DownloadStatus
-import com.alura.concord.data.DownloadableContent
+import com.alura.concord.data.DownloadableFile
 import com.alura.concord.data.Message
 import com.alura.concord.data.messageListSample
 import com.alura.concord.database.ChatDao
@@ -27,7 +27,7 @@ class MessageListViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val messageDao: MessageDao,
     private val chatDao: ChatDao,
-    private val downloadableContentDao: DownloadableContentDao
+    private val downloadableFileDao: DownloadableContentDao
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MessageListUiState())
     val uiState: StateFlow<MessageListUiState>
@@ -98,10 +98,11 @@ class MessageListViewModel @Inject constructor(
     }
 
     private suspend fun loadMessageWithDownloadableContent(searchedMessage: Message): Message? {
-        return searchedMessage.idDownloadableContent?.let { contentId ->
+        return searchedMessage.idDownloadableFile?.let { contentId ->
             searchedMessage.copy(
-                downloadableContent = downloadableContentDao.getById(contentId)
-                    .first()
+                downloadableFile = downloadableFileDao.getById(contentId).first()?.let {
+                    DownloadableFile(it)
+                }
             )
         }
     }
@@ -203,7 +204,7 @@ class MessageListViewModel @Inject constructor(
         val updatedMessages = _uiState.value.messages.map { message ->
             if (message.id == messageId) {
                 message.copy(
-                    downloadableContent = message.downloadableContent?.copy(
+                    downloadableFile = message.downloadableFile?.copy(
                         status = DownloadStatus.DOWNLOADING
                     )
                 )
@@ -221,8 +222,8 @@ class MessageListViewModel @Inject constructor(
         _uiState.value.messages.map { message ->
             if (message.id == messageId) {
                 val messageWithoutContentDownload = message.copy(
-                    idDownloadableContent = 0,
-                    downloadableContent = null,
+                    idDownloadableFile = 0,
+                    downloadableFile = null,
                     mediaLink = contentPath,
                 )
                 updateSingleMessage(messageWithoutContentDownload)
@@ -237,7 +238,7 @@ class MessageListViewModel @Inject constructor(
         val updatedMessages = _uiState.value.messages.map { message ->
             if (message.id == messageId) {
                 message.copy(
-                    downloadableContent = message.downloadableContent?.copy(
+                    downloadableFile = message.downloadableFile?.copy(
                         status = DownloadStatus.ERROR
                     )
                 )

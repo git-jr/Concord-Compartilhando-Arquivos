@@ -1,22 +1,21 @@
 package com.alura.concord.data
 
 import androidx.room.Entity
-import androidx.room.Ignore
 import androidx.room.PrimaryKey
 
 @Entity
-data class DownloadableContent(
+data class DownloadableEntity(
     @PrimaryKey(autoGenerate = true)
     var id: Long = 0L,
     var name: String = "",
     var url: String = "",
     var size: Long = 0L,
-    @Ignore
-    var status: DownloadStatus = DownloadStatus.PENDING,
-) {
+)
 
-    constructor() : this(0L, "", "", 0L)
-}
+data class DownloadableFile(
+    val content: DownloadableEntity,
+    var status: DownloadStatus = DownloadStatus.PENDING,
+)
 
 
 enum class DownloadStatus {
