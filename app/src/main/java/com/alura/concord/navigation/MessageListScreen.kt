@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -15,16 +16,15 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 import com.alura.concord.extensions.showMessage
+import com.alura.concord.media.FileUtils.moveFile
+import com.alura.concord.media.FileUtils.openFileWith
+import com.alura.concord.media.FileUtils.saveFileOnInternalStorage
+import com.alura.concord.media.FileUtils.shareFile
 import com.alura.concord.media.getAllImages
 import com.alura.concord.media.getNameByUri
 import com.alura.concord.media.imagePermission
-import com.alura.concord.media.moveFile
-import com.alura.concord.media.openWith
 import com.alura.concord.media.persistUriPermission
-import com.alura.concord.media.shareFile
 import com.alura.concord.media.verifyPermission
-import com.alura.concord.network.makeDownlaodByUrl
-import com.alura.concord.network.saveFileOnInternalStorage
 import com.alura.concord.ui.chat.MessageListViewModel
 import com.alura.concord.ui.chat.MessageScreen
 import com.alura.concord.ui.components.ModalBottomSheetFile
@@ -32,7 +32,6 @@ import com.alura.concord.ui.components.ModalBottomSheetShare
 import com.alura.concord.ui.components.ModalBottomSheetSticker
 import kotlinx.coroutines.launch
 import java.io.File
-
 
 internal const val messageChatRoute = "messages"
 internal const val messageChatIdArgument = "chatId"
@@ -62,7 +61,26 @@ fun NavGraphBuilder.messageListScreen(
                     }
                 }
 
-            val scope = rememberCoroutineScope()
+            LaunchedEffect(uiState.fileInDownload) {
+                uiState.fileInDownload?.let { fileInDownload ->
+                    fileInDownload.inputStream?.let {
+                        context.saveFileOnInternalStorage(
+                            inputStream = it,
+                            fileName = fileInDownload.name,
+                            onSuccess = { downloadedFilePath ->
+                                viewModelMessage.finishDownload(
+                                    fileInDownload.messageId,
+                                    downloadedFilePath
+                                )
+                            },
+                            onFailure = {
+                                viewModelMessage.failDownload(fileInDownload.messageId)
+                            }
+                        )
+                    }
+                }
+            }
+
 
             MessageScreen(
                 state = uiState,
@@ -86,34 +104,15 @@ fun NavGraphBuilder.messageListScreen(
                     onBack()
                 },
                 onContentDownload = { message ->
-                    viewModelMessage.startDownload(message.id)
-                    message.downloadableFile?.let {
-                        scope.launch {
-                            makeDownlaodByUrl(
-                                url = it.content.url,
-                                onFinisheDownload = { inputStream ->
-                                    scope.launch {
-                                        context.saveFileOnInternalStorage(
-                                            inputStream = inputStream,
-                                            fileName = it.content.name,
-                                            onSuccess = { contentPath ->
-                                                viewModelMessage.finishDownload(
-                                                    message.id,
-                                                    contentPath
-                                                )
-                                            },
-                                            onFailure = {
-                                                viewModelMessage.failDownload(message.id)
-                                            }
-                                        )
-                                    }
-                                },
-                                onFailureDownload = {
-                                    viewModelMessage.failDownload(message.id)
-                                }
-                            )
-                        }
+                    if (viewModelMessage.downloadInProgress()) {
+                        viewModelMessage.startDownload(message)
+                    } else {
+                        context.showMessage(
+                            "Aguarde o download terminar para baixar outro arquivo",
+                            true
+                        )
                     }
+
                 },
                 onShowFileOptions = { selectedMessage ->
                     viewModelMessage.setShowFileOptions(selectedMessage, true)
@@ -185,6 +184,7 @@ fun NavGraphBuilder.messageListScreen(
                     })
             }
 
+            val scope = rememberCoroutineScope()
             val createFile = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.CreateDocument("*/*"),
                 onResult = {
@@ -200,13 +200,12 @@ fun NavGraphBuilder.messageListScreen(
                 }
             )
 
-
             if (uiState.showBottomSheetShare) {
                 val mediaToOpen = uiState.selectedMessage.mediaLink
 
                 ModalBottomSheetShare(
                     onOpenWith = {
-                        context.openWith(mediaToOpen)
+                        context.openFileWith(mediaToOpen)
                     },
                     onShare = {
                         context.shareFile(mediaToOpen)

@@ -44,15 +44,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alura.concord.R
 import com.alura.concord.data.DownloadStatus
-import com.alura.concord.data.DownloadableEntity
 import com.alura.concord.data.DownloadableFile
-import com.alura.concord.data.Message
-import com.alura.concord.media.formatReadableFileSize
+import com.alura.concord.data.MessageWithFile
+import com.alura.concord.media.FileUtils.formatReadableFileSize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun MessageItemUser(message: Message) {
+fun MessageItemUser(message: MessageWithFile) {
     Column(
         modifier = Modifier
             .padding(vertical = 8.dp)
@@ -131,10 +130,10 @@ fun MessageItemUser(message: Message) {
 
 @Composable
 fun MessageItemOther(
-    message: Message,
+    message: MessageWithFile,
     modifier: Modifier = Modifier,
     onContentDownload: () -> Unit = {},
-    onShowFileOptions: (Message) -> Unit = {},
+    onShowFileOptions: (MessageWithFile) -> Unit = {},
 ) {
     var isSelected by remember { mutableStateOf(false) }
 
@@ -190,7 +189,7 @@ fun MessageItemOther(
                     ) {
                         DownloadButton(
                             status = contentFile.status,
-                            fileSize = formatReadableFileSize(contentFile.content.size),
+                            fileSize = formatReadableFileSize(contentFile.size),
                             onClickDownload = {
                                 onContentDownload()
                             }
@@ -288,22 +287,20 @@ fun DownloadButton(
 @Preview
 @Composable
 fun MessageItemUserPreview() {
-    MessageItemUser(Message())
+    MessageItemUser(MessageWithFile())
 }
 
 @Preview
 @Composable
 fun MessageItemOtherPreview() {
     MessageItemOther(
-        Message(
+        MessageWithFile(
             idDownloadableFile = 1,
             downloadableFile = DownloadableFile(
                 status = DownloadStatus.DOWNLOADING,
-                content = DownloadableEntity(
-                    name = "Arquivo teste.pdf",
-                    url = "url.teste",
-                    size = 123456,
-                )
+                name = "Arquivo teste.pdf",
+                url = "url.teste",
+                size = 123456,
             )
         ),
     )

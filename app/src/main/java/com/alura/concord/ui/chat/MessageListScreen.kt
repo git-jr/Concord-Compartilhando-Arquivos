@@ -35,8 +35,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alura.concord.R
 import com.alura.concord.data.Author
-import com.alura.concord.data.Message
-import com.alura.concord.data.messageListSample
+import com.alura.concord.data.MessageWithFile
+import com.alura.concord.data.messageEntityListSamples
+import com.alura.concord.data.toMessageFile
 import com.alura.concord.ui.components.*
 
 @Composable
@@ -48,8 +49,8 @@ fun MessageScreen(
     onShowSelectorStickers: () -> Unit = {},
     onDeselectMedia: () -> Unit = {},
     onBack: () -> Unit = {},
-    onContentDownload: (Message) -> Unit = {},
-    onShowFileOptions: (Message) -> Unit = {},
+    onContentDownload: (MessageWithFile) -> Unit = {},
+    onShowFileOptions: (MessageWithFile) -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -330,7 +331,7 @@ fun ChatScreenPreview() {
     MessageScreen(
         MessageListUiState(
             ownerName = "Alberto",
-            messages = messageListSample,
+            messages = messageEntityListSamples.map { it.toMessageFile() },
         )
     )
 }

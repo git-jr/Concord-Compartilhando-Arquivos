@@ -19,12 +19,14 @@ interface ChatDao {
     fun getAll(): Flow<List<Chat>>
 
     @Transaction
-    @Query("""
-    SELECT chat.*, message.content AS lastMessage, message.date AS dateLastMessage 
-    FROM Chat LEFT JOIN Message ON chat.id = message.chatId 
-    WHERE message.id = ( SELECT MAX(id) FROM Message
+    @Query(
+        """
+    SELECT chat.*, messageEntity.content AS lastMessage, messageEntity.date AS dateLastMessage 
+    FROM Chat LEFT JOIN MessageEntity ON chat.id = messageEntity.chatId 
+    WHERE messageEntity.id = ( SELECT MAX(id) FROM MessageEntity
     WHERE chatId = chat.id )
-    """)
+    """
+    )
     fun getAllWithLastMessage(): Flow<List<ChatWithLastMessage>>
 
     @Query("SELECT * FROM Chat WHERE id = :id")

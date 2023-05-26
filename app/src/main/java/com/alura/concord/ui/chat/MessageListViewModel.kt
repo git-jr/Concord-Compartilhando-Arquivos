@@ -5,15 +5,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alura.concord.data.Author
 import com.alura.concord.data.DownloadStatus
-import com.alura.concord.data.DownloadableFile
-import com.alura.concord.data.Message
-import com.alura.concord.data.messageListSample
+import com.alura.concord.data.FileInDownload
+import com.alura.concord.data.MessageEntity
+import com.alura.concord.data.MessageWithFile
+import com.alura.concord.data.toDownloadableFile
+import com.alura.concord.data.toMessageEntity
+import com.alura.concord.data.toMessageFile
 import com.alura.concord.database.ChatDao
-import com.alura.concord.database.DownloadableContentDao
+import com.alura.concord.database.DownloadableFileDao
 import com.alura.concord.database.MessageDao
 import com.alura.concord.navigation.messageChatIdArgument
+import com.alura.concord.network.DownloadService
+import com.alura.concord.network.DownloadService.makeDownloadByUrl
 import com.alura.concord.util.getFormattedCurrentDate
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,7 +33,7 @@ class MessageListViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val messageDao: MessageDao,
     private val chatDao: ChatDao,
-    private val downloadableFileDao: DownloadableContentDao
+    private val downloadableFileDao: DownloadableFileDao
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MessageListUiState())
     val uiState: StateFlow<MessageListUiState>
@@ -63,13 +69,6 @@ class MessageListViewModel @Inject constructor(
         }
     }
 
-    private fun initWithSamples() {
-        _uiState.value = _uiState.value.copy(
-            messages = messageListSample,
-        )
-        loadChatsInfos()
-    }
-
     private fun loadDatas() {
         loadChatsInfos()
         loadMessages()
@@ -81,7 +80,7 @@ class MessageListViewModel @Inject constructor(
                 messages.forEach { searchedMessage ->
                     if (searchedMessage.author == Author.OTHER) {
                         loadMessageWithDownloadableContent(
-                            searchedMessage
+                            searchedMessage.toMessageFile()
                         )?.let { messageWithDownloadableContent ->
                             _uiState.value = _uiState.value.copy(
                                 messages = _uiState.value.messages + messageWithDownloadableContent
@@ -89,7 +88,7 @@ class MessageListViewModel @Inject constructor(
                         }
                     } else {
                         _uiState.value = _uiState.value.copy(
-                            messages = _uiState.value.messages + searchedMessage
+                            messages = _uiState.value.messages + searchedMessage.toMessageFile()
                         )
                     }
                 }
@@ -97,12 +96,13 @@ class MessageListViewModel @Inject constructor(
         }
     }
 
-    private suspend fun loadMessageWithDownloadableContent(searchedMessage: Message): Message? {
+    private suspend fun loadMessageWithDownloadableContent(
+        searchedMessage: MessageWithFile
+    ): MessageWithFile? {
         return searchedMessage.idDownloadableFile?.let { contentId ->
+            val downloadableFileEntity = downloadableFileDao.getById(contentId).first()
             searchedMessage.copy(
-                downloadableFile = downloadableFileDao.getById(contentId).first()?.let {
-                    DownloadableFile(it)
-                }
+                downloadableFile = downloadableFileEntity?.toDownloadableFile()
             )
         }
     }
@@ -120,7 +120,7 @@ class MessageListViewModel @Inject constructor(
     }
 
     private fun saveMessage(
-        userMessage: Message
+        userMessage: MessageEntity
     ) {
         viewModelScope.launch {
             userMessage.let { messageDao.insert(it) }
@@ -141,14 +141,14 @@ class MessageListViewModel @Inject constructor(
                 return
             }
 
-            val userMessage = Message(
+            val userMessageEntity = MessageEntity(
                 content = value.messageValue,
                 author = Author.USER,
                 chatId = chatId,
                 mediaLink = value.mediaInSelection,
                 date = getFormattedCurrentDate(),
             )
-            saveMessage(userMessage)
+            saveMessage(userMessageEntity)
             cleanFields()
         }
     }
@@ -193,16 +193,17 @@ class MessageListViewModel @Inject constructor(
     }
 
 
-    fun setShowFileOptions(message: Message? = null, show: Boolean) {
+    fun setShowFileOptions(message: MessageWithFile? = null, show: Boolean) {
         _uiState.value = _uiState.value.copy(
             showBottomSheetShare = show,
-            selectedMessage = message ?: Message()
+            selectedMessage = message ?: MessageWithFile()
         )
     }
 
-    fun startDownload(messageId: Long) {
+    fun startDownload(messageWithDownload: MessageWithFile) {
+
         val updatedMessages = _uiState.value.messages.map { message ->
-            if (message.id == messageId) {
+            if (message.id == messageWithDownload.id) {
                 message.copy(
                     downloadableFile = message.downloadableFile?.copy(
                         status = DownloadStatus.DOWNLOADING
@@ -213,8 +214,41 @@ class MessageListViewModel @Inject constructor(
             }
         }
 
-        _uiState.value = _uiState.value.copy(
-            messages = updatedMessages
+        val fileInDownload = messageWithDownload.downloadableFile?.let {
+            FileInDownload(
+                messageId = messageWithDownload.id,
+                url = it.url,
+                name = it.name,
+                inputStream = null
+            )
+        }
+
+        fileInDownload?.let {
+            _uiState.value = _uiState.value.copy(
+                messages = updatedMessages,
+                fileInDownload = fileInDownload
+            )
+            makeDownload(fileInDownload)
+        }
+
+    }
+
+    private fun makeDownload(
+        fileInDownload: FileInDownload,
+    ) = viewModelScope.launch {
+        delay(5000)
+        makeDownloadByUrl(
+            url = fileInDownload.url,
+            onFinisheDownload = { inputStream ->
+                _uiState.value = _uiState.value.copy(
+                    fileInDownload = _uiState.value.fileInDownload?.copy(
+                        inputStream = inputStream
+                    )
+                )
+            },
+            onFailureDownload = {
+                failDownload(fileInDownload.messageId)
+            }
         )
     }
 
@@ -226,12 +260,12 @@ class MessageListViewModel @Inject constructor(
                     downloadableFile = null,
                     mediaLink = contentPath,
                 )
-                updateSingleMessage(messageWithoutContentDownload)
-                messageWithoutContentDownload
+                updateSingleMessage(messageWithoutContentDownload.toMessageEntity())
             } else {
                 message
             }
         }
+        _uiState.value = _uiState.value.copy(fileInDownload = null)
     }
 
     fun failDownload(messageId: Long) {
@@ -248,13 +282,19 @@ class MessageListViewModel @Inject constructor(
         }
 
         _uiState.value = _uiState.value.copy(
-            messages = updatedMessages
+            messages = updatedMessages,
+            fileInDownload = null
         )
     }
 
-    private fun updateSingleMessage(message: Message) {
+    private fun updateSingleMessage(messageEntity: MessageEntity) {
         viewModelScope.launch {
-            messageDao.insert(message)
+            messageDao.insert(messageEntity)
         }
+    }
+
+
+    fun downloadInProgress(): Boolean {
+        return _uiState.value.fileInDownload == null
     }
 }

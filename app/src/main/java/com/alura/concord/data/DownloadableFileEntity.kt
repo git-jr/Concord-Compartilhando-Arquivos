@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity
-data class DownloadableEntity(
+data class DownloadableFileEntity(
     @PrimaryKey(autoGenerate = true)
     var id: Long = 0L,
     var name: String = "",
@@ -12,12 +12,10 @@ data class DownloadableEntity(
     var size: Long = 0L,
 )
 
-data class DownloadableFile(
-    val content: DownloadableEntity,
-    var status: DownloadStatus = DownloadStatus.PENDING,
+fun DownloadableFileEntity.toDownloadableFile() = DownloadableFile(
+    id = id,
+    name = name,
+    url = url,
+    size = size,
+    status = DownloadStatus.PENDING,
 )
-
-
-enum class DownloadStatus {
-    PENDING, DOWNLOADING, ERROR
-}
