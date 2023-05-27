@@ -1,5 +1,8 @@
 package com.alura.concord.data
 
+import com.alura.concord.database.entities.Author
+import com.alura.concord.database.entities.MessageEntity
+
 data class MessageWithFile(
     var id: Long = 0L,
     var chatId: Long = 0L,

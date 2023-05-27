@@ -40,7 +40,7 @@ object DownloadService {
                     is NetworkErrorException,
                     is FileNotFoundException -> {
                         onFailureDownload()
-                        Log.e("Download error:", exception.toString())
+                        Log.e("Download error:", exception.message, exception)
                     }
 
                     else -> throw exception

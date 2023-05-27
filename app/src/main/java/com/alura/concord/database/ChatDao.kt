@@ -21,9 +21,9 @@ interface ChatDao {
     @Transaction
     @Query(
         """
-    SELECT chat.*, messageEntity.content AS lastMessage, messageEntity.date AS dateLastMessage 
-    FROM Chat LEFT JOIN MessageEntity ON chat.id = messageEntity.chatId 
-    WHERE messageEntity.id = ( SELECT MAX(id) FROM MessageEntity
+    SELECT chat.*, message.content AS lastMessage, message.date AS dateLastMessage 
+    FROM Chat LEFT JOIN Message ON chat.id = message.chatId 
+    WHERE message.id = ( SELECT MAX(id) FROM Message
     WHERE chatId = chat.id )
     """
     )

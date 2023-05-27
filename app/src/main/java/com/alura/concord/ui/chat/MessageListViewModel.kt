@@ -3,23 +3,21 @@ package com.alura.concord.ui.chat
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.alura.concord.data.Author
+import com.alura.concord.database.entities.Author
 import com.alura.concord.data.DownloadStatus
 import com.alura.concord.data.FileInDownload
-import com.alura.concord.data.MessageEntity
+import com.alura.concord.database.entities.MessageEntity
 import com.alura.concord.data.MessageWithFile
-import com.alura.concord.data.toDownloadableFile
+import com.alura.concord.database.entities.toDownloadableFile
 import com.alura.concord.data.toMessageEntity
-import com.alura.concord.data.toMessageFile
+import com.alura.concord.database.entities.toMessageFile
 import com.alura.concord.database.ChatDao
 import com.alura.concord.database.DownloadableFileDao
 import com.alura.concord.database.MessageDao
 import com.alura.concord.navigation.messageChatIdArgument
-import com.alura.concord.network.DownloadService
 import com.alura.concord.network.DownloadService.makeDownloadByUrl
 import com.alura.concord.util.getFormattedCurrentDate
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -79,7 +77,7 @@ class MessageListViewModel @Inject constructor(
             messageDao.getByChatId(chatId).collect { messages ->
                 messages.forEach { searchedMessage ->
                     if (searchedMessage.author == Author.OTHER) {
-                        loadMessageWithDownloadableContent(
+                        loadMessageWithDownloadableFile(
                             searchedMessage.toMessageFile()
                         )?.let { messageWithDownloadableContent ->
                             _uiState.value = _uiState.value.copy(
@@ -96,7 +94,7 @@ class MessageListViewModel @Inject constructor(
         }
     }
 
-    private suspend fun loadMessageWithDownloadableContent(
+    private suspend fun loadMessageWithDownloadableFile(
         searchedMessage: MessageWithFile
     ): MessageWithFile? {
         return searchedMessage.idDownloadableFile?.let { contentId ->
@@ -230,13 +228,11 @@ class MessageListViewModel @Inject constructor(
             )
             makeDownload(fileInDownload)
         }
-
     }
 
     private fun makeDownload(
         fileInDownload: FileInDownload,
     ) = viewModelScope.launch {
-        delay(5000)
         makeDownloadByUrl(
             url = fileInDownload.url,
             onFinisheDownload = { inputStream ->
@@ -247,7 +243,7 @@ class MessageListViewModel @Inject constructor(
                 )
             },
             onFailureDownload = {
-                failDownload(fileInDownload.messageId)
+                failureDownload(fileInDownload.messageId)
             }
         )
     }
@@ -265,10 +261,12 @@ class MessageListViewModel @Inject constructor(
                 message
             }
         }
-        _uiState.value = _uiState.value.copy(fileInDownload = null)
+        _uiState.value = _uiState.value.copy(
+            fileInDownload = null
+        )
     }
 
-    fun failDownload(messageId: Long) {
+    fun failureDownload(messageId: Long) {
         val updatedMessages = _uiState.value.messages.map { message ->
             if (message.id == messageId) {
                 message.copy(

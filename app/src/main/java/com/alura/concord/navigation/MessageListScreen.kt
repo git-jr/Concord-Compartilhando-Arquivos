@@ -16,14 +16,14 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 import com.alura.concord.extensions.showMessage
-import com.alura.concord.media.FileUtils.moveFile
-import com.alura.concord.media.FileUtils.openFileWith
-import com.alura.concord.media.FileUtils.saveFileOnInternalStorage
-import com.alura.concord.media.FileUtils.shareFile
 import com.alura.concord.media.getAllImages
 import com.alura.concord.media.getNameByUri
 import com.alura.concord.media.imagePermission
+import com.alura.concord.media.moveFile
+import com.alura.concord.media.openFileWith
 import com.alura.concord.media.persistUriPermission
+import com.alura.concord.media.saveFileOnInternalStorage
+import com.alura.concord.media.shareFile
 import com.alura.concord.media.verifyPermission
 import com.alura.concord.ui.chat.MessageListViewModel
 import com.alura.concord.ui.chat.MessageScreen
@@ -47,77 +47,62 @@ fun NavGraphBuilder.messageListScreen(
             val uiState by viewModelMessage.uiState.collectAsState()
             val context = LocalContext.current
 
-            val requestPermissionLauncher =
-                rememberLauncherForActivityResult(
-                    ActivityResultContracts.RequestPermission()
-                ) { isGranted: Boolean ->
-                    if (isGranted) {
-                        viewModelMessage.setShowBottomSheetSticker(true)
-                    } else {
-                        context.showMessage(
-                            "Permissão não concedida, não será possivel acessar os stickers sem ela",
-                            true
-                        )
-                    }
-                }
-
-            LaunchedEffect(uiState.fileInDownload) {
-                uiState.fileInDownload?.let { fileInDownload ->
-                    fileInDownload.inputStream?.let {
-                        context.saveFileOnInternalStorage(
-                            inputStream = it,
-                            fileName = fileInDownload.name,
-                            onSuccess = { downloadedFilePath ->
-                                viewModelMessage.finishDownload(
-                                    fileInDownload.messageId,
-                                    downloadedFilePath
-                                )
-                            },
-                            onFailure = {
-                                viewModelMessage.failDownload(fileInDownload.messageId)
-                            }
-                        )
-                    }
+            val requestPermissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission()
+            ) { isGranted: Boolean ->
+                if (isGranted) {
+                    viewModelMessage.setShowBottomSheetSticker(true)
+                } else {
+                    context.showMessage(
+                        "Permissão não concedida, não será possivel acessar os stickers sem ela",
+                        true
+                    )
                 }
             }
 
+            LaunchedEffect(uiState.fileInDownload) {
+                val fileInDownload = uiState.fileInDownload ?: return@LaunchedEffect
+                val inputStream = fileInDownload.inputStream ?: return@LaunchedEffect
 
-            MessageScreen(
-                state = uiState,
-                onSendMessage = {
-                    viewModelMessage.sendMessage()
-                },
-                onShowSelectorFile = {
-                    viewModelMessage.setShowBottomSheetFile(true)
-                },
-                onShowSelectorStickers = {
-                    if (context.verifyPermission(imagePermission())) {
-                        requestPermissionLauncher.launch(imagePermission())
-                    } else {
-                        viewModelMessage.setShowBottomSheetSticker(true)
-                    }
-                },
-                onDeselectMedia = {
-                    viewModelMessage.deselectMedia()
-                },
-                onBack = {
-                    onBack()
-                },
-                onContentDownload = { message ->
-                    if (viewModelMessage.downloadInProgress()) {
-                        viewModelMessage.startDownload(message)
-                    } else {
-                        context.showMessage(
-                            "Aguarde o download terminar para baixar outro arquivo",
-                            true
+                context.saveFileOnInternalStorage(inputStream = inputStream,
+                    fileName = fileInDownload.name,
+                    onSuccess = { downloadedFilePath ->
+                        viewModelMessage.finishDownload(
+                            fileInDownload.messageId, downloadedFilePath
                         )
-                    }
+                    },
+                    onFailure = {
+                        viewModelMessage.failureDownload(fileInDownload.messageId)
+                    })
+            }
 
-                },
-                onShowFileOptions = { selectedMessage ->
-                    viewModelMessage.setShowFileOptions(selectedMessage, true)
+
+            MessageScreen(state = uiState, onSendMessage = {
+                viewModelMessage.sendMessage()
+            }, onShowSelectorFile = {
+                viewModelMessage.setShowBottomSheetFile(true)
+            }, onShowSelectorStickers = {
+                if (context.verifyPermission(imagePermission())) {
+                    requestPermissionLauncher.launch(imagePermission())
+                } else {
+                    viewModelMessage.setShowBottomSheetSticker(true)
                 }
-            )
+            }, onDeselectMedia = {
+                viewModelMessage.deselectMedia()
+            }, onBack = {
+                onBack()
+            }, onContentDownload = { message ->
+                if (viewModelMessage.downloadInProgress()) {
+                    viewModelMessage.startDownload(message)
+                } else {
+                    context.showMessage(
+                        "Aguarde o download terminar para baixar outro arquivo", true
+                    )
+                }
+
+            }, onShowFileOptions = { selectedMessage ->
+                viewModelMessage.setShowFileOptions(selectedMessage, true)
+            })
 
             if (uiState.showBottomSheetSticker) {
 
@@ -127,15 +112,13 @@ fun NavGraphBuilder.messageListScreen(
                     stickerList.addAll(images)
                 })
 
-                ModalBottomSheetSticker(
-                    stickerList = stickerList,
-                    onSelectedSticker = {
-                        viewModelMessage.setShowBottomSheetSticker(false)
-                        viewModelMessage.loadMediaInScreen(path = it.toString())
-                        viewModelMessage.sendMessage()
-                    }, onBack = {
-                        viewModelMessage.setShowBottomSheetSticker(false)
-                    })
+                ModalBottomSheetSticker(stickerList = stickerList, onSelectedSticker = {
+                    viewModelMessage.setShowBottomSheetSticker(false)
+                    viewModelMessage.loadMediaInScreen(path = it.toString())
+                    viewModelMessage.sendMessage()
+                }, onBack = {
+                    viewModelMessage.setShowBottomSheetSticker(false)
+                })
             }
 
             val pickMedia = rememberLauncherForActivityResult(
@@ -167,64 +150,56 @@ fun NavGraphBuilder.messageListScreen(
             }
 
             if (uiState.showBottomSheetFile) {
-                ModalBottomSheetFile(
-                    onSelectPhoto = {
-                        pickMedia.launch(
-                            PickVisualMediaRequest(
-                                ActivityResultContracts.PickVisualMedia.ImageAndVideo
-                            )
+                ModalBottomSheetFile(onSelectPhoto = {
+                    pickMedia.launch(
+                        PickVisualMediaRequest(
+                            ActivityResultContracts.PickVisualMedia.ImageAndVideo
                         )
-                        viewModelMessage.setShowBottomSheetFile(false)
-                    },
-                    onSelectFile = {
-                        pickFile.launch(arrayOf("*/*"))
-                        viewModelMessage.setShowBottomSheetFile(false)
-                    }, onBack = {
-                        viewModelMessage.setShowBottomSheetFile(false)
-                    })
+                    )
+                    viewModelMessage.setShowBottomSheetFile(false)
+                }, onSelectFile = {
+                    pickFile.launch(arrayOf("*/*"))
+                    viewModelMessage.setShowBottomSheetFile(false)
+                }, onBack = {
+                    viewModelMessage.setShowBottomSheetFile(false)
+                })
             }
 
             val scope = rememberCoroutineScope()
-            val createFile = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.CreateDocument("*/*"),
-                onResult = {
+            val createFile =
+                rememberLauncherForActivityResult(contract = ActivityResultContracts.CreateDocument(
+                    "*/*"
+                ), onResult = {
                     it?.let { selectedPath ->
                         val mediaToOpen = uiState.selectedMessage.mediaLink
                         scope.launch {
                             context.moveFile(
-                                sourcePathFile = mediaToOpen,
-                                destinationFile = selectedPath
+                                sourcePathFile = mediaToOpen, destinationFile = selectedPath
                             )
                         }
                     }
-                }
-            )
+                })
 
             if (uiState.showBottomSheetShare) {
                 val mediaToOpen = uiState.selectedMessage.mediaLink
 
-                ModalBottomSheetShare(
-                    onOpenWith = {
-                        context.openFileWith(mediaToOpen)
-                    },
-                    onShare = {
-                        context.shareFile(mediaToOpen)
-                    },
-                    onSave = {
-                        val fileExtension = File(mediaToOpen).extension
-                        createFile.launch("fileName.$fileExtension")
-                    },
-                    onBack = {
-                        viewModelMessage.setShowBottomSheetShare(false)
-                    })
+                ModalBottomSheetShare(onOpenWith = {
+                    context.openFileWith(mediaToOpen)
+                }, onShare = {
+                    context.shareFile(mediaToOpen)
+                }, onSave = {
+                    val fileExtension = File(mediaToOpen).extension
+                    createFile.launch("Arquivo.$fileExtension")
+                }, onBack = {
+                    viewModelMessage.setShowBottomSheetShare(false)
+                })
             }
         }
     }
 }
 
 internal fun NavHostController.navigateToMessageScreen(
-    chatId: Long,
-    navOptions: NavOptions? = null
+    chatId: Long, navOptions: NavOptions? = null
 ) {
     navigate("$messageChatRoute/$chatId", navOptions)
 }

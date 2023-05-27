@@ -34,10 +34,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alura.concord.R
-import com.alura.concord.data.Author
+import com.alura.concord.database.entities.Author
 import com.alura.concord.data.MessageWithFile
 import com.alura.concord.data.messageEntityListSamples
-import com.alura.concord.data.toMessageFile
+import com.alura.concord.database.entities.toMessageFile
 import com.alura.concord.ui.components.*
 
 @Composable

@@ -46,7 +46,7 @@ import com.alura.concord.R
 import com.alura.concord.data.DownloadStatus
 import com.alura.concord.data.DownloadableFile
 import com.alura.concord.data.MessageWithFile
-import com.alura.concord.media.FileUtils.formatReadableFileSize
+import com.alura.concord.media.formatReadableFileSize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -189,7 +189,7 @@ fun MessageItemOther(
                     ) {
                         DownloadButton(
                             status = contentFile.status,
-                            fileSize = formatReadableFileSize(contentFile.size),
+                            fileSize = contentFile.size.formatReadableFileSize(),
                             onClickDownload = {
                                 onContentDownload()
                             }

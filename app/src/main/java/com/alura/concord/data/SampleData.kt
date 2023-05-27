@@ -1,6 +1,8 @@
 package com.alura.concord.data
 
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
+import com.alura.concord.database.entities.Author
+import com.alura.concord.database.entities.MessageEntity
 import com.alura.concord.util.getRandomDate
 
 val messageEntityListSamples = mutableListOf(

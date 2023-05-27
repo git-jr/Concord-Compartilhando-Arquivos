@@ -1,9 +1,10 @@
-package com.alura.concord.data
+package com.alura.concord.database.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.alura.concord.data.MessageWithFile
 
-@Entity
+@Entity(tableName = "Message")
 data class MessageEntity(
     @PrimaryKey(autoGenerate = true)
     var id: Long = 0L,
