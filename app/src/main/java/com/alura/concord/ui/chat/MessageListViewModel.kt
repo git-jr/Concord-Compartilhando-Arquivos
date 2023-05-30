@@ -75,23 +75,42 @@ class MessageListViewModel @Inject constructor(
     private fun loadMessages() {
         viewModelScope.launch {
             messageDao.getByChatId(chatId).collect { messages ->
-                messages.forEach { searchedMessage ->
+                val mapMensagens = messages.map { searchedMessage ->
                     if (searchedMessage.author == Author.OTHER) {
                         loadMessageWithDownloadableFile(
                             searchedMessage.toMessageFile()
-                        )?.let { messageWithDownloadableContent ->
-                            _uiState.value = _uiState.value.copy(
-                                messages = _uiState.value.messages + messageWithDownloadableContent
-                            )
-                        }
-                    } else {
-                        _uiState.value = _uiState.value.copy(
-                            messages = _uiState.value.messages + searchedMessage.toMessageFile()
                         )
+                    } else {
+                        searchedMessage.toMessageFile()
                     }
                 }
+
+                _uiState.value = _uiState.value.copy(
+                    messages = mapMensagens.filterNotNull()
+                )
             }
         }
+
+
+//        viewModelScope.launch {
+//            messageDao.getByChatId(chatId).collect { messages ->
+//                messages.forEach { searchedMessage ->
+//                    if (searchedMessage.author == Author.OTHER) {
+//                        loadMessageWithDownloadableFile(
+//                            searchedMessage.toMessageFile()
+//                        )?.let { messageWithDownloadableContent ->
+//                            _uiState.value = _uiState.value.copy(
+//                                messages = _uiState.value.messages + messageWithDownloadableContent
+//                            )
+//                        }
+//                    } else {
+//                        _uiState.value = _uiState.value.copy(
+//                            messages = _uiState.value.messages + searchedMessage.toMessageFile()
+//                        )
+//                    }
+//                }
+//            }
+//        }
     }
 
     private suspend fun loadMessageWithDownloadableFile(
@@ -249,20 +268,25 @@ class MessageListViewModel @Inject constructor(
     }
 
     fun finishDownload(messageId: Long, contentPath: String) {
-        _uiState.value.messages.map { message ->
+        var messageWithoutContentDownload: MessageWithFile = MessageWithFile()
+
+        val menssagens = _uiState.value.messages.map { message ->
             if (message.id == messageId) {
-                val messageWithoutContentDownload = message.copy(
+                messageWithoutContentDownload = message.copy(
                     idDownloadableFile = 0,
                     downloadableFile = null,
                     mediaLink = contentPath,
                 )
                 updateSingleMessage(messageWithoutContentDownload.toMessageEntity())
+                messageWithoutContentDownload
             } else {
                 message
             }
         }
+
         _uiState.value = _uiState.value.copy(
-            fileInDownload = null
+            fileInDownload = null,
+            messages = menssagens
         )
     }
 
