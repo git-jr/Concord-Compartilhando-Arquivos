@@ -24,20 +24,14 @@ private fun File.getFileMimeType(): String? {
 fun Long.formatReadableFileSize(): String {
     val size = this
     val kilobyte = 1024
-    val megaByte = kilobyte * kilobyte
+    val megaByte = kilobyte * 1024
+    val gigaByte = megaByte * 1024
 
     return when {
-        size < kilobyte -> {
-            "$size KB"
-        }
-
-        size < megaByte -> {
-            "${size / kilobyte} MB"
-        }
-
-        else -> {
-            "${size / (kilobyte * kilobyte)} GB"
-        }
+        size < kilobyte -> "$size B"
+        size < megaByte -> "${size / kilobyte} KB"
+        size < gigaByte -> "${size / megaByte} MB"
+        else -> "${size / gigaByte} GB"
     }
 }
 

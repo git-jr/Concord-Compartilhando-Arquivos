@@ -90,27 +90,6 @@ class MessageListViewModel @Inject constructor(
                 )
             }
         }
-
-
-//        viewModelScope.launch {
-//            messageDao.getByChatId(chatId).collect { messages ->
-//                messages.forEach { searchedMessage ->
-//                    if (searchedMessage.author == Author.OTHER) {
-//                        loadMessageWithDownloadableFile(
-//                            searchedMessage.toMessageFile()
-//                        )?.let { messageWithDownloadableContent ->
-//                            _uiState.value = _uiState.value.copy(
-//                                messages = _uiState.value.messages + messageWithDownloadableContent
-//                            )
-//                        }
-//                    } else {
-//                        _uiState.value = _uiState.value.copy(
-//                            messages = _uiState.value.messages + searchedMessage.toMessageFile()
-//                        )
-//                    }
-//                }
-//            }
-//        }
     }
 
     private suspend fun loadMessageWithDownloadableFile(
@@ -180,12 +159,6 @@ class MessageListViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             mediaInSelection = "",
             hasContentToSend = false
-        )
-    }
-
-    fun setImagePermission(value: Boolean) {
-        _uiState.value = _uiState.value.copy(
-            hasImagePermission = value,
         )
     }
 

@@ -52,8 +52,6 @@ private fun BottomSheetStickers(
     stickerList: MutableList<String>,
     onSelectedSticker: (Uri) -> Unit = {}
 ) {
-    val context = LocalContext.current
-
     Column(
         Modifier
             .fillMaxWidth()
