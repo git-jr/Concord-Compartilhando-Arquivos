@@ -165,6 +165,8 @@ fun NavGraphBuilder.messageListScreen(
 
 
             if (uiState.showBottomSheetShare) {
+                val mensagem = uiState.selectedMessage
+
                 val mediaToOpen = uiState.selectedMessage.mediaLink
 
                 ModalBottomSheetShare(onOpenWith = {
