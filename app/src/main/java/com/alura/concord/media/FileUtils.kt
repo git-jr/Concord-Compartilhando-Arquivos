@@ -1,6 +1,8 @@
 package com.alura.concord.media
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
@@ -35,9 +37,21 @@ suspend fun Context.saveFileOnInternalStorage(
         newFile.outputStream().use { file ->
             inputStream.copyTo(file)
         }
-        
+
         if (newFile.exists()) {
             onSuccess(newFile.path.toString())
         }
     }
+}
+
+
+fun Context.openFileWith(mediaLink: String) {
+
+    val shareIntent: Intent = Intent().apply {
+        action = Intent.ACTION_VIEW
+        putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaLink))
+        type = "image/*"
+    }
+    startActivity(Intent.createChooser(shareIntent, "Abrir com"))
+
 }

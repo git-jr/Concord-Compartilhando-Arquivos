@@ -19,6 +19,7 @@ import com.alura.concord.extensions.showMessage
 import com.alura.concord.media.getAllImages
 import com.alura.concord.media.getNameByUri
 import com.alura.concord.media.imagePermission
+import com.alura.concord.media.openFileWith
 import com.alura.concord.media.persistUriPermission
 import com.alura.concord.media.saveFileOnInternalStorage
 import com.alura.concord.media.verifyPermission
@@ -167,7 +168,7 @@ fun NavGraphBuilder.messageListScreen(
                 val mediaToOpen = uiState.selectedMessage.mediaLink
 
                 ModalBottomSheetShare(onOpenWith = {
-
+                    context.openFileWith(mediaToOpen)
                 }, onShare = {
 
                 }, onSave = {
