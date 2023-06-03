@@ -69,6 +69,9 @@ fun NavGraphBuilder.messageListScreen(
                                     fileInDownload.messageId,
                                     contentPath
                                 )
+                            },
+                            onFailure = {
+                                viewModelMessage.failureDownload(fileInDownload.messageId)
                             }
                         )
                     }

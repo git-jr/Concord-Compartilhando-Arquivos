@@ -233,6 +233,9 @@ class MessageListViewModel @Inject constructor(
                             inputStream = inputStream
                         )
                     )
+                },
+                onFailureDownload = {
+                    failureDownload(fileInDownload.messageId)
                 }
             )
         }
@@ -262,7 +265,7 @@ class MessageListViewModel @Inject constructor(
         )
     }
 
-    private fun failureDownload(messageId: Long) {
+    fun failureDownload(messageId: Long) {
         val updatedMessages = _uiState.value.messages.map { message ->
             if (message.id == messageId) {
                 message.copy(

@@ -2,7 +2,9 @@ package com.alura.concord.media
 
 import android.content.Context
 import android.content.Intent
+import android.hardware.camera2.CaptureFailure
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
@@ -29,6 +31,7 @@ suspend fun Context.saveFileOnInternalStorage(
     inputStream: InputStream,
     fileName: String,
     onSuccess: (String) -> Unit,
+    onFailure: () -> Unit
 ) {
     val folderName = "temp"
     val path = getExternalFilesDir(folderName)
@@ -41,6 +44,8 @@ suspend fun Context.saveFileOnInternalStorage(
 
         if (newFile.exists()) {
             onSuccess(newFile.path.toString())
+        }else{
+            onFailure()
         }
     }
 }
@@ -48,15 +53,20 @@ suspend fun Context.saveFileOnInternalStorage(
 
 fun Context.openFileWith(mediaLink: String) {
 
+    val file = File(mediaLink)
     val fileUri = FileProvider.getUriForFile(
         this,
         "com.alura.concord.fileprovider",
-        File(mediaLink)
+        file
     )
+
+    val fileExtension = MimeTypeMap.getFileExtensionFromUrl(Uri.encode(file.path))
+    val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension) ?: "*/*"
+
 
     val shareIntent: Intent = Intent().apply {
         action = Intent.ACTION_VIEW
-        setDataAndType(fileUri, "image/*")
+        setDataAndType(fileUri, mimeType)
         flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
     }
     startActivity(Intent.createChooser(shareIntent, "Abrir com"))
