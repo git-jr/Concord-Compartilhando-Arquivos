@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.Intent.EXTRA_STREAM
 import android.net.Uri
+import android.os.Environment
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers.IO
@@ -80,6 +81,33 @@ fun Context.shareFile(mediaLink: String) {
     startActivity(Intent.createChooser(shareIntent, "Compartilhar"))
 }
 
+fun Context.saveFileOnExternalStorage(
+    mediaLink: String,
+) {
+    val sourceFile = File(mediaLink)
+    val fileName = sourceFile.name
+
+    val resolver = contentResolver
+
+    val directoryConcord =
+        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS + File.separator + "Concord")
+
+    if (!directoryConcord.exists()) {
+        directoryConcord.mkdir()
+    }
+
+    val newFile = File(directoryConcord, fileName)
+    val uri = Uri.fromFile(newFile)
+
+    uri.let {
+        resolver.openOutputStream(it)?.use { outputStream ->
+            sourceFile.inputStream().use { inputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
+    }
+}
+
 private fun Context.getFileProviderUri(file: File): Uri? {
     return FileProvider.getUriForFile(
         this,
@@ -92,3 +120,5 @@ private fun File.getMimeType(): String {
     val fileExtension = MimeTypeMap.getFileExtensionFromUrl(Uri.encode(path))
     return MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension) ?: "*/*"
 }
+
+

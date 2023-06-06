@@ -8,7 +8,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
@@ -21,16 +20,15 @@ import com.alura.concord.media.getNameByUri
 import com.alura.concord.media.imagePermission
 import com.alura.concord.media.openFileWith
 import com.alura.concord.media.persistUriPermission
+import com.alura.concord.media.saveFileOnExternalStorage
 import com.alura.concord.media.saveFileOnInternalStorage
 import com.alura.concord.media.shareFile
 import com.alura.concord.media.verifyPermission
-import com.alura.concord.network.DownloadService.makeDownloadByUrl
 import com.alura.concord.ui.chat.MessageListViewModel
 import com.alura.concord.ui.chat.MessageScreen
 import com.alura.concord.ui.components.ModalBottomSheetFile
 import com.alura.concord.ui.components.ModalBottomSheetShare
 import com.alura.concord.ui.components.ModalBottomSheetSticker
-import kotlinx.coroutines.launch
 
 internal const val messageChatRoute = "messages"
 internal const val messageChatIdArgument = "chatId"
@@ -167,7 +165,6 @@ fun NavGraphBuilder.messageListScreen(
                 })
             }
 
-
             if (uiState.showBottomSheetShare) {
                 val mediaToOpen = uiState.selectedMessage.mediaLink
 
@@ -176,7 +173,7 @@ fun NavGraphBuilder.messageListScreen(
                 }, onShare = {
                     context.shareFile(mediaToOpen)
                 }, onSave = {
-
+                    context.saveFileOnExternalStorage(mediaToOpen)
                 }, onBack = {
                     viewModelMessage.setShowBottomSheetShare(false)
                 })
