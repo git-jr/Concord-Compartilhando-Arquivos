@@ -83,6 +83,22 @@ fun Context.shareFile(mediaLink: String) {
 
 fun Context.saveFileOnExternalStorage(
     mediaLink: String,
+    destinationFile: Uri
+) {
+    val sourceFile = File(mediaLink)
+    val resolver = contentResolver
+
+    destinationFile.let {
+        resolver.openOutputStream(it)?.use { outputStream ->
+            sourceFile.inputStream().use { inputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
+    }
+}
+
+fun Context.saveFileOnExternalStorageOld(
+    mediaLink: String,
 ) {
     val sourceFile = File(mediaLink)
     val fileName = sourceFile.name
