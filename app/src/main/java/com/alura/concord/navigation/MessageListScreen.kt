@@ -1,5 +1,6 @@
 package com.alura.concord.navigation
 
+import android.Manifest
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -165,6 +166,22 @@ fun NavGraphBuilder.messageListScreen(
                 })
             }
 
+            val requestWritePermissionLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission(),
+                onResult = { isGranted ->
+                    if (isGranted) {
+                        val mediaToOpen = uiState.selectedMessage.mediaLink
+                        context.saveFileOnExternalStorage(mediaToOpen)
+                    } else {
+                        context.showMessage(
+                            "Permissão não concedida, não será possivel salvar sem ela",
+                            true
+                        )
+                    }
+                }
+            )
+
+
             if (uiState.showBottomSheetShare) {
                 val mediaToOpen = uiState.selectedMessage.mediaLink
 
@@ -173,7 +190,11 @@ fun NavGraphBuilder.messageListScreen(
                 }, onShare = {
                     context.shareFile(mediaToOpen)
                 }, onSave = {
-                    context.saveFileOnExternalStorage(mediaToOpen)
+                    if (context.verifyPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                        requestWritePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    } else {
+                        context.saveFileOnExternalStorage(mediaToOpen)
+                    }
                 }, onBack = {
                     viewModelMessage.setShowBottomSheetShare(false)
                 })
