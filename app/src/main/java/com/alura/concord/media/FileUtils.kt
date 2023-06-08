@@ -4,9 +4,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.Intent.EXTRA_STREAM
 import android.net.Uri
-import android.os.Environment
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
+import androidx.documentfile.provider.DocumentFile
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -83,46 +83,32 @@ fun Context.shareFile(mediaLink: String) {
 
 fun Context.saveFileOnExternalStorage(
     mediaLink: String,
-    destinationFile: Uri
+    destinationFile: Uri,
+    onSuccess: () -> Unit,
+    onFailure: () -> Unit
 ) {
-    val sourceFile = File(mediaLink)
-    val resolver = contentResolver
+    try {
+        val sourceFile = File(mediaLink)
+        val resolver = contentResolver
 
-    destinationFile.let {
-        resolver.openOutputStream(it)?.use { outputStream ->
-            sourceFile.inputStream().use { inputStream ->
-                inputStream.copyTo(outputStream)
+        destinationFile.let {
+            resolver.openOutputStream(it)?.use { outputStream ->
+                sourceFile.inputStream().use { inputStream ->
+                    inputStream.copyTo(outputStream)
+                }
             }
         }
+        onSuccess()
+    } catch (exception: Exception) {
+        val createdFile = File(destinationFile.toString())
+        if (!createdFile.exists()) {
+            val documentFile = DocumentFile.fromSingleUri(this, destinationFile);
+            documentFile?.delete()
+        }
+        onFailure()
     }
 }
 
-fun Context.saveFileOnExternalStorageOld(
-    mediaLink: String,
-) {
-    val sourceFile = File(mediaLink)
-    val fileName = sourceFile.name
-
-    val resolver = contentResolver
-
-    val directoryConcord =
-        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS + File.separator + "Concord")
-
-    if (!directoryConcord.exists()) {
-        directoryConcord.mkdir()
-    }
-
-    val newFile = File(directoryConcord, fileName)
-    val uri = Uri.fromFile(newFile)
-
-    uri.let {
-        resolver.openOutputStream(it)?.use { outputStream ->
-            sourceFile.inputStream().use { inputStream ->
-                inputStream.copyTo(outputStream)
-            }
-        }
-    }
-}
 
 private fun Context.getFileProviderUri(file: File): Uri? {
     return FileProvider.getUriForFile(

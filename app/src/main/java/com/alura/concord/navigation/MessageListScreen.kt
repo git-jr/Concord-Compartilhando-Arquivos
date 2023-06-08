@@ -171,7 +171,16 @@ fun NavGraphBuilder.messageListScreen(
                 onResult = {
                     it?.let { selectedPath ->
                         val mediaToOpen = uiState.selectedMessage.mediaLink
-                        context.saveFileOnExternalStorage(mediaToOpen, selectedPath)
+                        context.saveFileOnExternalStorage(
+                            mediaToOpen,
+                            selectedPath,
+                            onSuccess = {
+                                context.showMessage("Arquivo salvo com sucesso")
+                            },
+                            onFailure = {
+                                context.showMessage("Falha ao salvar o arquivo")
+                            }
+                        )
                     }
                 }
             )
@@ -200,4 +209,3 @@ internal fun NavHostController.navigateToMessageScreen(
 ) {
     navigate("$messageChatRoute/$chatId", navOptions)
 }
-
