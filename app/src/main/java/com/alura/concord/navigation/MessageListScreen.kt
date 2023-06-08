@@ -22,7 +22,7 @@ import com.alura.concord.media.verifyPermission
 import com.alura.concord.ui.chat.MessageListViewModel
 import com.alura.concord.ui.chat.MessageScreen
 import com.alura.concord.ui.components.ModalBottomSheetFile
-import com.alura.concord.ui.components.ModalBottomSheetShare
+import com.alura.concord.ui.components.ModalBottomShareSheet
 import com.alura.concord.ui.components.ModalBottomSheetSticker
 
 internal const val messageChatRoute = "messages"
@@ -53,32 +53,40 @@ fun NavGraphBuilder.messageListScreen(
             }
 
 
-            MessageScreen(state = uiState, onSendMessage = {
-                viewModelMessage.sendMessage()
-            }, onShowSelectorFile = {
-                viewModelMessage.setShowBottomSheetFile(true)
-            }, onShowSelectorStickers = {
-                if (context.verifyPermission(imagePermission())) {
-                    requestPermissionLauncher.launch(imagePermission())
-                } else {
-                    viewModelMessage.setShowBottomSheetSticker(true)
+            MessageScreen(
+                state = uiState,
+                onSendMessage = {
+                    viewModelMessage.sendMessage()
+                },
+                onShowSelectorFile = {
+                    viewModelMessage.setShowBottomSheetFile(true)
+                },
+                onShowSelectorStickers = {
+                    if (context.verifyPermission(imagePermission())) {
+                        requestPermissionLauncher.launch(imagePermission())
+                    } else {
+                        viewModelMessage.setShowBottomSheetSticker(true)
+                    }
+                },
+                onDeselectMedia = {
+                    viewModelMessage.deselectMedia()
+                },
+                onBack = {
+                    onBack()
+                },
+                onContentDownload = { message ->
+                    if (viewModelMessage.downloadInProgress()) {
+                        viewModelMessage.startDownload(message)
+                    } else {
+                        context.showMessage(
+                            "Aguarde o download terminar para baixar outro arquivo", true
+                        )
+                    }
+                },
+                onShowFileOptions = { selectedMessage ->
+                    viewModelMessage.setShowFileOptions(selectedMessage.id, true)
                 }
-            }, onDeselectMedia = {
-                viewModelMessage.deselectMedia()
-            }, onBack = {
-                onBack()
-            }, onContentDownload = { message ->
-                if (viewModelMessage.downloadInProgress()) {
-                    viewModelMessage.startDownload(message)
-                } else {
-                    context.showMessage(
-                        "Aguarde o download terminar para baixar outro arquivo", true
-                    )
-                }
-
-            }, onShowFileOptions = { selectedMessage ->
-                viewModelMessage.setShowFileOptions(selectedMessage, true)
-            })
+            )
 
             if (uiState.showBottomSheetSticker) {
 
@@ -88,13 +96,17 @@ fun NavGraphBuilder.messageListScreen(
                     stickerList.addAll(images)
                 })
 
-                ModalBottomSheetSticker(stickerList = stickerList, onSelectedSticker = {
-                    viewModelMessage.setShowBottomSheetSticker(false)
-                    viewModelMessage.loadMediaInScreen(path = it.toString())
-                    viewModelMessage.sendMessage()
-                }, onBack = {
-                    viewModelMessage.setShowBottomSheetSticker(false)
-                })
+                ModalBottomSheetSticker(
+                    stickerList = stickerList,
+                    onSelectedSticker = {
+                        viewModelMessage.setShowBottomSheetSticker(false)
+                        viewModelMessage.loadMediaInScreen(path = it.toString())
+                        viewModelMessage.sendMessage()
+                    },
+                    onBack = {
+                        viewModelMessage.setShowBottomSheetSticker(false)
+                    }
+                )
             }
 
             val pickMedia = rememberLauncherForActivityResult(
@@ -102,7 +114,6 @@ fun NavGraphBuilder.messageListScreen(
             ) { uri ->
                 if (uri != null) {
                     context.persistUriPermission(uri)
-
                     viewModelMessage.loadMediaInScreen(uri.toString())
                 } else {
                     Log.d("PhotoPicker", "No media selected")
@@ -126,34 +137,43 @@ fun NavGraphBuilder.messageListScreen(
             }
 
             if (uiState.showBottomSheetFile) {
-                ModalBottomSheetFile(onSelectPhoto = {
-                    pickMedia.launch(
-                        PickVisualMediaRequest(
-                            ActivityResultContracts.PickVisualMedia.ImageAndVideo
+                ModalBottomSheetFile(
+                    onSelectPhoto = {
+                        pickMedia.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageAndVideo
+                            )
                         )
-                    )
-                    viewModelMessage.setShowBottomSheetFile(false)
-                }, onSelectFile = {
-                    pickFile.launch(arrayOf("*/*"))
-                    viewModelMessage.setShowBottomSheetFile(false)
-                }, onBack = {
-                    viewModelMessage.setShowBottomSheetFile(false)
-                })
+                        viewModelMessage.setShowBottomSheetFile(false)
+                    },
+                    onSelectFile = {
+                        pickFile.launch(arrayOf("*/*"))
+                        viewModelMessage.setShowBottomSheetFile(false)
+                    },
+                    onBack = {
+                        viewModelMessage.setShowBottomSheetFile(false)
+                    }
+                )
             }
 
 
-            if (uiState.showBottomSheetShare) {
+            if (uiState.showBottomShareSheet) {
                 val mediaToOpen = uiState.selectedMessage.mediaLink
 
-                ModalBottomSheetShare(onOpenWith = {
+                ModalBottomShareSheet(
+                    onOpenWith = {
 
-                }, onShare = {
+                    },
+                    onShare = {
 
-                }, onSave = {
+                    },
+                    onSave = {
 
-                }, onBack = {
-                    viewModelMessage.setShowBottomSheetShare(false)
-                })
+                    },
+                    onBack = {
+                        viewModelMessage.setShowBottomShareSheet(false)
+                    }
+                )
             }
         }
     }

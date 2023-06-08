@@ -17,7 +17,7 @@ data class MessageListUiState(
     val hasImagePermission: Boolean = false,
     val showBottomSheetSticker: Boolean = false,
     val showBottomSheetFile: Boolean = false,
-    val showBottomSheetShare: Boolean = false,
+    val showBottomShareSheet: Boolean = false,
     val onMakeContentDownload: (Boolean) -> Unit = {},
     val selectedMessage: MessageWithFile = MessageWithFile(),
     val fileInDownload: FileInDownload? = null,

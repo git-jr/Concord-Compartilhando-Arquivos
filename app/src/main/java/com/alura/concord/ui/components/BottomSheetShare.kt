@@ -27,7 +27,7 @@ import com.alura.concord.ui.theme.ConcordTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ModalBottomSheetShare(
+fun ModalBottomShareSheet(
     onOpenWith: () -> Unit = {},
     onShare: () -> Unit = {},
     onSave: () -> Unit = {},

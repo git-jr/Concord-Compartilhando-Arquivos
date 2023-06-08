@@ -175,17 +175,18 @@ class MessageListViewModel @Inject constructor(
     }
 
 
-    fun setShowBottomSheetShare(value: Boolean) {
+    fun setShowBottomShareSheet(value: Boolean) {
         _uiState.value = _uiState.value.copy(
-            showBottomSheetShare = value,
+            showBottomShareSheet = value,
         )
     }
 
 
-    fun setShowFileOptions(message: MessageWithFile? = null, show: Boolean) {
+    fun setShowFileOptions(messageId: Long? = null, show: Boolean) {
         _uiState.value = _uiState.value.copy(
-            showBottomSheetShare = show,
-            selectedMessage = message ?: MessageWithFile()
+            showBottomShareSheet = show,
+            selectedMessage = _uiState.value.messages.firstOrNull { it.id == messageId }
+                ?: MessageWithFile()
         )
     }
 
@@ -222,7 +223,6 @@ class MessageListViewModel @Inject constructor(
     }
 
 
-
     fun finishDownload(messageId: Long, contentPath: String) {
         var messageWithoutContentDownload = MessageWithFile()
 
@@ -246,7 +246,7 @@ class MessageListViewModel @Inject constructor(
         )
     }
 
-    private fun failureDownload(messageId: Long) {
+    fun failureDownload(messageId: Long) {
         val updatedMessages = _uiState.value.messages.map { message ->
             if (message.id == messageId) {
                 message.copy(
