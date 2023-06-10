@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -19,6 +20,7 @@ import com.alura.concord.media.getAllImages
 import com.alura.concord.media.getNameByUri
 import com.alura.concord.media.imagePermission
 import com.alura.concord.media.persistUriPermission
+import com.alura.concord.media.saveOnInternalStorage
 import com.alura.concord.media.verifyPermission
 import com.alura.concord.network.DownloadService.makeDownloadFileByURL
 import com.alura.concord.ui.chat.MessageListViewModel
@@ -55,7 +57,26 @@ fun NavGraphBuilder.messageListScreen(
                 }
             }
 
-            val scope = rememberCoroutineScope()
+
+            LaunchedEffect(uiState.fileInDownload) {
+                uiState.fileInDownload?.let { fileInDownload ->
+                    fileInDownload.inputStream?.let {
+                        context.saveOnInternalStorage(
+                            inputStream = it,
+                            fileName = fileInDownload.name,
+                            onSuccess = { filePath ->
+                                viewModelMessage.finishDownload(
+                                    messageId = fileInDownload.messageId,
+                                    contentPath = filePath
+                                )
+                            }
+                        )
+                    }
+
+                }
+            }
+
+
             MessageScreen(
                 state = uiState,
                 onSendMessage = {
@@ -78,13 +99,6 @@ fun NavGraphBuilder.messageListScreen(
                     onBack()
                 },
                 onContentDownload = { message ->
-
-                    scope.launch {
-                        makeDownloadFileByURL(
-                            "https://github.com/alura-cursos/jetpack-compose-armazenamento-arquivos-android/raw/arquivos/images/tiramisu.png",
-                            context
-                        )
-                    }
 
                     if (viewModelMessage.downloadInProgress()) {
                         viewModelMessage.startDownload(message)
