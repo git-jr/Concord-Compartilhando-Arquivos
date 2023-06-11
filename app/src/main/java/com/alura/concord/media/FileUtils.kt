@@ -3,12 +3,12 @@ package com.alura.concord.media
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
-import java.security.AccessController.getContext
 
 
 fun Long.formatReadableFileSize(): String {
@@ -29,7 +29,8 @@ fun Long.formatReadableFileSize(): String {
 suspend fun Context.saveOnInternalStorage(
     inputStream: InputStream,
     fileName: String,
-    onSuccess: (String) -> Unit
+    onSuccess: (String) -> Unit,
+    onFailure: () -> Unit
 ) {
 
     val path = getExternalFilesDir("temp")
@@ -42,6 +43,8 @@ suspend fun Context.saveOnInternalStorage(
 
         if (newFile.exists()) {
             onSuccess(newFile.path)
+        } else {
+            onFailure()
         }
     }
 }
@@ -49,15 +52,19 @@ suspend fun Context.saveOnInternalStorage(
 
 fun Context.openWith(mediaLink: String) {
 
+    val file = File(mediaLink)
     val fileUri: Uri = FileProvider.getUriForFile(
         this,
         "com.alura.concord.fileprovider",
-        File(mediaLink)
+        file
     )
+
+    val fileExtension = MimeTypeMap.getFileExtensionFromUrl(Uri.encode(file.path))
+    val fileMimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
 
     val sendIntent: Intent = Intent().apply {
         action = Intent.ACTION_VIEW
-        setDataAndType(fileUri, "image/*" )
+        setDataAndType(fileUri, fileMimeType)
         flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
     }
 
