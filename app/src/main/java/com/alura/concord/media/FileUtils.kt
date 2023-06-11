@@ -53,14 +53,8 @@ suspend fun Context.saveOnInternalStorage(
 fun Context.openWith(mediaLink: String) {
 
     val file = File(mediaLink)
-    val fileUri: Uri = FileProvider.getUriForFile(
-        this,
-        "com.alura.concord.fileprovider",
-        file
-    )
-
-    val fileExtension = MimeTypeMap.getFileExtensionFromUrl(Uri.encode(file.path))
-    val fileMimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
+    val fileUri: Uri = getFileUriProvider(file)
+    val fileMimeType = file.getMimeType()
 
     val sendIntent: Intent = Intent().apply {
         action = Intent.ACTION_VIEW
@@ -71,4 +65,36 @@ fun Context.openWith(mediaLink: String) {
     val shareIntent = Intent.createChooser(sendIntent, null)
     startActivity(shareIntent)
 
+}
+
+fun Context.shareFile(mediaLink: String) {
+
+    val file = File(mediaLink)
+    val fileUri: Uri = getFileUriProvider(file)
+
+    val fileMimeType = file.getMimeType()
+
+    val sendIntent: Intent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_STREAM, fileUri)
+        type = fileMimeType
+        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+    }
+
+    val shareIntent = Intent.createChooser(sendIntent, null)
+    startActivity(shareIntent)
+
+}
+
+private fun File.getMimeType(): String? {
+    val fileExtension = MimeTypeMap.getFileExtensionFromUrl(Uri.encode(this.path))
+    return MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
+}
+
+private fun Context.getFileUriProvider(file: File): Uri {
+    return FileProvider.getUriForFile(
+        this,
+        "com.alura.concord.fileprovider",
+        file
+    )
 }

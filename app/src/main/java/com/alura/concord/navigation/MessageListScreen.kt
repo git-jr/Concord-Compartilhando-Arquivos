@@ -22,6 +22,7 @@ import com.alura.concord.media.imagePermission
 import com.alura.concord.media.openWith
 import com.alura.concord.media.persistUriPermission
 import com.alura.concord.media.saveOnInternalStorage
+import com.alura.concord.media.shareFile
 import com.alura.concord.media.verifyPermission
 import com.alura.concord.network.DownloadService.makeDownloadFileByURL
 import com.alura.concord.ui.chat.MessageListViewModel
@@ -192,10 +193,9 @@ fun NavGraphBuilder.messageListScreen(
                 ModalBottomShareSheet(
                     onOpenWith = {
                         context.openWith(mediaToOpen)
-
                     },
                     onShare = {
-
+                        context.shareFile(mediaToOpen)
                     },
                     onSave = {
 
