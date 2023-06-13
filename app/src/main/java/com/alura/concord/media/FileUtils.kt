@@ -3,6 +3,7 @@ package com.alura.concord.media
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Environment
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers.IO
@@ -79,6 +80,29 @@ fun Context.shareFile(mediaLink: String) {
     }
     startActivity(Intent.createChooser(shareIntent, "Compartilhar"))
 
+}
+
+
+ fun Context.saveOnExternalStorage(mediaLink: String) {
+    val sourceFile = File(mediaLink)
+    val fileName = sourceFile.name
+
+    val newFilePath = Environment.getExternalStoragePublicDirectory(
+        Environment.DIRECTORY_DOCUMENTS + File.separator + "Concord"
+    )
+
+    if (!newFilePath.exists()) {
+        newFilePath.mkdir()
+    }
+
+    val newFile = File(newFilePath, fileName)
+    val newFileUri = Uri.fromFile(newFile)
+
+    contentResolver.openOutputStream(newFileUri)?.use { outputStream ->
+        sourceFile.inputStream().use { inputStream ->
+            inputStream.copyTo(outputStream)
+        }
+    }
 }
 
 private fun Context.getFileUriProvider(file: File): Uri {
