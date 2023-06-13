@@ -1,6 +1,10 @@
 package com.alura.concord.navigation
 
 import android.Manifest
+import android.content.Intent
+import android.os.Build
+import android.os.Environment
+import android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -196,6 +200,18 @@ fun NavGraphBuilder.messageListScreen(
                 }
             )
 
+            val requestManagePermission = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartActivityForResult(),
+                onResult = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        if (Environment.isExternalStorageManager()) {
+                            val mediaToOpen = uiState.selectedMessage.mediaLink
+                            context.saveOnExternalStorage(mediaToOpen)
+                        }
+                    }
+                }
+            )
+
             if (uiState.showBottomShareSheet) {
                 val mediaToOpen = uiState.selectedMessage.mediaLink
 
@@ -207,10 +223,24 @@ fun NavGraphBuilder.messageListScreen(
                         context.shareFile(mediaToOpen)
                     },
                     onSave = {
-                        if (context.verifyPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                            requestWritePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        } else {
+                        val writePermissionIsGranted =
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                Environment.isExternalStorageManager()
+                            } else {
+                                !context.verifyPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            }
+                        if (writePermissionIsGranted) {
                             context.saveOnExternalStorage(mediaToOpen)
+                        } else {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                requestManagePermission.launch(
+                                    Intent(
+                                        ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION
+                                    )
+                                )
+                            } else {
+                                requestWritePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            }
                         }
                     },
                     onBack = {
@@ -227,4 +257,5 @@ internal fun NavHostController.navigateToMessageScreen(
 ) {
     navigate("$messageChatRoute/$chatId", navOptions)
 }
+
 
