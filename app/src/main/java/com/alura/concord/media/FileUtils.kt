@@ -92,7 +92,7 @@ fun Context.shareFile(mediaLink: String) {
     )
 
     if (!newFilePath.exists()) {
-        newFilePath.mkdir()
+        newFilePath.mkdirs()
     }
 
     val newFile = File(newFilePath, fileName)
