@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Environment
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
+import androidx.documentfile.provider.DocumentFile
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
 import okio.use
@@ -89,9 +90,17 @@ fun Context.saveOnExternalStorage(
 ) {
     val sourceFile = File(mediaLink)
 
-    contentResolver.openOutputStream(destination)?.use { outputStream ->
-        sourceFile.inputStream().use { inputStream ->
-            inputStream.copyTo(outputStream)
+    try {
+        contentResolver.openOutputStream(destination)?.use { outputStream ->
+            sourceFile.inputStream().use { inputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
+    } catch (e: Exception) {
+        val createdFile = File(destination.toString())
+        if (!createdFile.exists()) {
+            val documentFile = DocumentFile.fromSingleUri(this, destination)
+            documentFile?.delete()
         }
     }
 }
