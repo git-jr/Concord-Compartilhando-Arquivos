@@ -83,22 +83,13 @@ fun Context.shareFile(mediaLink: String) {
 }
 
 
- fun Context.saveOnExternalStorage(mediaLink: String) {
+fun Context.saveOnExternalStorage(
+    mediaLink: String,
+    destination: Uri
+) {
     val sourceFile = File(mediaLink)
-    val fileName = sourceFile.name
 
-    val newFilePath = Environment.getExternalStoragePublicDirectory(
-        Environment.DIRECTORY_DOCUMENTS + File.separator + "Concord"
-    )
-
-    if (!newFilePath.exists()) {
-        newFilePath.mkdirs()
-    }
-
-    val newFile = File(newFilePath, fileName)
-    val newFileUri = Uri.fromFile(newFile)
-
-    contentResolver.openOutputStream(newFileUri)?.use { outputStream ->
+    contentResolver.openOutputStream(destination)?.use { outputStream ->
         sourceFile.inputStream().use { inputStream ->
             inputStream.copyTo(outputStream)
         }
